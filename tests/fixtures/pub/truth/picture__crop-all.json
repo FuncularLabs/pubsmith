@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "name": "crop-all",
+  "pages": [
+    {
+      "width": 612.0,
+      "height": 792.0,
+      "elements": [
+        {
+          "type": "image",
+          "bounds": {
+            "x": 87.11999999999999,
+            "y": 87.11999999999999,
+            "width": 185.76,
+            "height": 185.76
+          },
+          "rotation": 0.0,
+          "source": "crop-all.assets-20260930163535-103532/e0.png",
+          "crop": null,
+          "stroke": null
+        }
+      ]
+    }
+  ]
+}

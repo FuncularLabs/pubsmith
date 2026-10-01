@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "name": "F04-images-crop-alpha",
+  "pages": [
+    {
+      "width": 612.0,
+      "height": 792.0,
+      "elements": [
+        {
+          "type": "shape",
+          "bounds": {
+            "x": 36.0,
+            "y": 36.0,
+            "width": 540.0,
+            "height": 300.0
+          },
+          "rotation": 0.0,
+          "kind": "rectangle",
+          "fill": "#FFC878",
+          "stroke": {
+            "color": "#000000",
+            "width": 2.0
+          }
+        },
+        {
+          "type": "image",
+          "bounds": {
+            "x": 53.99999999999999,
+            "y": 53.99999999999999,
+            "width": 215.99999999999997,
+            "height": 215.99999999999997
+          },
+          "rotation": 0.0,
+          "source": "F04-images-crop-alpha.assets-20260930164500-39100/e0.png",
+          "crop": null,
+          "stroke": null
+        },
+        {
+          "type": "image",
+          "bounds": {
+            "x": 314.64,
+            "y": 124.8,
+            "width": 215.27999999999997,
+            "height": 60.959999999999994
+          },
+          "rotation": 0.0,
+          "source": "F04-images-crop-alpha.assets-20260930164500-39100/e1.png",
+          "crop": null,
+          "stroke": null
+        },
+        {
+          "type": "image",
+          "bounds": {
+            "x": 69.11999999999999,
+            "y": 395.28,
+            "width": 185.76,
+            "height": 185.51999999999998
+          },
+          "rotation": 0.0,
+          "source": "F04-images-crop-alpha.assets-20260930164500-39100/e2.png",
+          "crop": null,
+          "stroke": null
+        },
+        {
+          "type": "image",
+          "bounds": {
+            "x": 300.0,
+            "y": 379.91999999999996,
+            "width": 259.91999999999996,
+            "height": 130.07999999999998
+          },
+          "rotation": 0.0,
+          "source": "F04-images-crop-alpha.assets-20260930164500-39100/e3.png",
+          "crop": null,
+          "stroke": null
+        }
+      ]
+    }
+  ]
+}

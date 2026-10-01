@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "name": "circle",
+  "pages": [
+    {
+      "width": 612.0,
+      "height": 792.0,
+      "elements": [
+        {
+          "type": "image",
+          "bounds": {
+            "x": 54.239999999999995,
+            "y": 41.519999999999996,
+            "width": 296.4,
+            "height": 122.16
+          },
+          "rotation": 0.0,
+          "source": "circle.assets-20260930164408-111916/e0.png",
+          "crop": null,
+          "stroke": null
+        }
+      ]
+    }
+  ]
+}

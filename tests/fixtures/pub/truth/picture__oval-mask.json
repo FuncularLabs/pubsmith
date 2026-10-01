@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "name": "oval-mask",
+  "pages": [
+    {
+      "width": 612.0,
+      "height": 792.0,
+      "elements": [
+        {
+          "type": "image",
+          "bounds": {
+            "x": 72.0,
+            "y": 72.0,
+            "width": 215.99999999999997,
+            "height": 215.99999999999997
+          },
+          "rotation": 0.0,
+          "source": "oval-mask.assets-20260930163628-55660/e0.png",
+          "crop": null,
+          "stroke": null
+        }
+      ]
+    }
+  ]
+}

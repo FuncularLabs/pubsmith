@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "name": "triangle",
+  "pages": [
+    {
+      "width": 612.0,
+      "height": 792.0,
+      "elements": [
+        {
+          "type": "image",
+          "bounds": {
+            "x": 70.32,
+            "y": 69.6,
+            "width": 147.35999999999999,
+            "height": 147.6
+          },
+          "rotation": 0.0,
+          "source": "triangle.assets-20260930163850-45080/e0.png",
+          "crop": null,
+          "stroke": null
+        }
+      ]
+    }
+  ]
+}

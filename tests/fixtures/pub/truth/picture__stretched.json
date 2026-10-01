@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "name": "stretched",
+  "pages": [
+    {
+      "width": 612.0,
+      "height": 792.0,
+      "elements": [
+        {
+          "type": "image",
+          "bounds": {
+            "x": 72.0,
+            "y": 72.0,
+            "width": 130.07999999999998,
+            "height": 130.07999999999998
+          },
+          "rotation": 0.0,
+          "source": "stretched.assets-20260930163645-29808/e0.png",
+          "crop": null,
+          "stroke": null
+        }
+      ]
+    }
+  ]
+}

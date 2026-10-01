@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "name": "crop-left",
+  "pages": [
+    {
+      "width": 612.0,
+      "height": 792.0,
+      "elements": [
+        {
+          "type": "image",
+          "bounds": {
+            "x": 87.11999999999999,
+            "y": 72.0,
+            "width": 200.88,
+            "height": 215.99999999999997
+          },
+          "rotation": 0.0,
+          "source": "crop-left.assets-20260930163545-97876/e0.png",
+          "crop": null,
+          "stroke": null
+        }
+      ]
+    }
+  ]
+}

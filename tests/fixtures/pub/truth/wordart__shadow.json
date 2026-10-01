@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "name": "shadow",
+  "pages": [
+    {
+      "width": 612.0,
+      "height": 792.0,
+      "elements": [
+        {
+          "type": "image",
+          "bounds": {
+            "x": 71.52,
+            "y": 71.52,
+            "width": 263.28,
+            "height": 53.99999999999999
+          },
+          "rotation": 0.0,
+          "source": "shadow.assets-20260930164443-63848/e0.png",
+          "crop": null,
+          "stroke": null
+        }
+      ]
+    }
+  ]
+}

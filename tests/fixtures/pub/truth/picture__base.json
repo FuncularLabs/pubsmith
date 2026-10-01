@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "name": "base",
+  "pages": [
+    {
+      "width": 612.0,
+      "height": 792.0,
+      "elements": [
+        {
+          "type": "image",
+          "bounds": {
+            "x": 72.0,
+            "y": 72.0,
+            "width": 215.99999999999997,
+            "height": 215.99999999999997
+          },
+          "rotation": 0.0,
+          "source": "base.assets-20260930163516-99196/e0.png",
+          "crop": null,
+          "stroke": null
+        }
+      ]
+    }
+  ]
+}

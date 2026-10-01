@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "name": "border",
+  "pages": [
+    {
+      "width": 612.0,
+      "height": 792.0,
+      "elements": [
+        {
+          "type": "image",
+          "bounds": {
+            "x": 69.6,
+            "y": 69.6,
+            "width": 220.79999999999998,
+            "height": 220.79999999999998
+          },
+          "rotation": 0.0,
+          "source": "border.assets-20260930163525-124116/e0.png",
+          "crop": null,
+          "stroke": null
+        }
+      ]
+    }
+  ]
+}

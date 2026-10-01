@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "name": "heart",
+  "pages": [
+    {
+      "width": 612.0,
+      "height": 792.0,
+      "elements": [
+        {
+          "type": "image",
+          "bounds": {
+            "x": 72.0,
+            "y": 71.03999999999999,
+            "width": 144.72,
+            "height": 146.88
+          },
+          "rotation": 0.0,
+          "source": "heart.assets-20260930163735-122616/e0.png",
+          "crop": null,
+          "stroke": null
+        }
+      ]
+    }
+  ]
+}

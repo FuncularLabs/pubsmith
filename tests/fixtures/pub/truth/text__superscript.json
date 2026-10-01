@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "name": "superscript",
+  "pages": [
+    {
+      "width": 612.0,
+      "height": 792.0,
+      "elements": [
+        {
+          "type": "text",
+          "bounds": {
+            "x": 72.0,
+            "y": 72.0,
+            "width": 288.0,
+            "height": 144.0
+          },
+          "rotation": 0.0,
+          "insets": {
+            "left": 2.880000114440918,
+            "top": 2.880000114440918,
+            "right": 2.880000114440918,
+            "bottom": 2.880000114440918
+          },
+          "paragraphs": [
+            {
+              "alignment": "left",
+              "lineSpacing": 1.190000057220459,
+              "spaceBefore": 0.0,
+              "spaceAfter": 6.0,
+              "runs": [
+                {
+                  "text": "Hello Example Text world",
+                  "style": {
+                    "family": "Calibri",
+                    "size": 10.0,
+                    "bold": false,
+                    "italic": false,
+                    "color": "#000000"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "name": "polyline",
+  "pages": [
+    {
+      "width": 612.0,
+      "height": 792.0,
+      "elements": [
+        {
+          "type": "image",
+          "bounds": {
+            "x": 71.03999999999999,
+            "y": 71.03999999999999,
+            "width": 146.16,
+            "height": 146.16
+          },
+          "rotation": 0.0,
+          "source": "polyline.assets-20260930163810-117836/e0.png",
+          "crop": null,
+          "stroke": null
+        }
+      ]
+    }
+  ]
+}

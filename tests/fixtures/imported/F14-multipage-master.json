@@ -1,0 +1,396 @@
+{
+  "schemaVersion": 1,
+  "name": "F14-multipage-master",
+  "pages": [
+    {
+      "width": 612.0,
+      "height": 792.0,
+      "elements": [
+        {
+          "type": "shape",
+          "bounds": {
+            "x": 0.0,
+            "y": 0.0,
+            "width": 612.0,
+            "height": 40.0
+          },
+          "rotation": 0.0,
+          "kind": "rectangle",
+          "fill": "#005AA0",
+          "stroke": {
+            "color": "#000000",
+            "width": 2.0
+          }
+        },
+        {
+          "type": "text",
+          "bounds": {
+            "x": 20.0,
+            "y": 8.0,
+            "width": 400.0,
+            "height": 24.0
+          },
+          "rotation": 0.0,
+          "insets": {
+            "left": 2.880000114440918,
+            "top": 2.880000114440918,
+            "right": 2.880000114440918,
+            "bottom": 2.880000114440918
+          },
+          "paragraphs": [
+            {
+              "alignment": "left",
+              "lineSpacing": 1.190000057220459,
+              "spaceBefore": 0.0,
+              "spaceAfter": 6.0,
+              "runs": [
+                {
+                  "text": "MASTER HEADER",
+                  "style": {
+                    "family": "Calibri",
+                    "size": 10.0,
+                    "bold": false,
+                    "italic": false,
+                    "color": "#000000"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "bounds": {
+            "x": 500.0,
+            "y": 740.0,
+            "width": 80.0,
+            "height": 24.0
+          },
+          "rotation": 0.0,
+          "insets": {
+            "left": 2.880000114440918,
+            "top": 2.880000114440918,
+            "right": 2.880000114440918,
+            "bottom": 2.880000114440918
+          },
+          "paragraphs": [
+            {
+              "alignment": "left",
+              "lineSpacing": 1.190000057220459,
+              "spaceBefore": 0.0,
+              "spaceAfter": 6.0,
+              "runs": [
+                {
+                  "text": "#",
+                  "style": {
+                    "family": "Calibri",
+                    "size": 10.0,
+                    "bold": false,
+                    "italic": false,
+                    "color": "#000000"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "bounds": {
+            "x": 54.0,
+            "y": 100.0,
+            "width": 400.0,
+            "height": 40.0
+          },
+          "rotation": 0.0,
+          "insets": {
+            "left": 2.880000114440918,
+            "top": 2.880000114440918,
+            "right": 2.880000114440918,
+            "bottom": 2.880000114440918
+          },
+          "paragraphs": [
+            {
+              "alignment": "left",
+              "lineSpacing": 1.190000057220459,
+              "spaceBefore": 0.0,
+              "spaceAfter": 6.0,
+              "runs": [
+                {
+                  "text": "Body content page 1",
+                  "style": {
+                    "family": "Calibri",
+                    "size": 10.0,
+                    "bold": false,
+                    "italic": false,
+                    "color": "#000000"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "width": 612.0,
+      "height": 792.0,
+      "elements": [
+        {
+          "type": "shape",
+          "bounds": {
+            "x": 0.0,
+            "y": 0.0,
+            "width": 612.0,
+            "height": 40.0
+          },
+          "rotation": 0.0,
+          "kind": "rectangle",
+          "fill": "#005AA0",
+          "stroke": {
+            "color": "#000000",
+            "width": 2.0
+          }
+        },
+        {
+          "type": "text",
+          "bounds": {
+            "x": 20.0,
+            "y": 8.0,
+            "width": 400.0,
+            "height": 24.0
+          },
+          "rotation": 0.0,
+          "insets": {
+            "left": 2.880000114440918,
+            "top": 2.880000114440918,
+            "right": 2.880000114440918,
+            "bottom": 2.880000114440918
+          },
+          "paragraphs": [
+            {
+              "alignment": "left",
+              "lineSpacing": 1.190000057220459,
+              "spaceBefore": 0.0,
+              "spaceAfter": 6.0,
+              "runs": [
+                {
+                  "text": "MASTER HEADER",
+                  "style": {
+                    "family": "Calibri",
+                    "size": 10.0,
+                    "bold": false,
+                    "italic": false,
+                    "color": "#000000"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "bounds": {
+            "x": 500.0,
+            "y": 740.0,
+            "width": 80.0,
+            "height": 24.0
+          },
+          "rotation": 0.0,
+          "insets": {
+            "left": 2.880000114440918,
+            "top": 2.880000114440918,
+            "right": 2.880000114440918,
+            "bottom": 2.880000114440918
+          },
+          "paragraphs": [
+            {
+              "alignment": "left",
+              "lineSpacing": 1.190000057220459,
+              "spaceBefore": 0.0,
+              "spaceAfter": 6.0,
+              "runs": [
+                {
+                  "text": "#",
+                  "style": {
+                    "family": "Calibri",
+                    "size": 10.0,
+                    "bold": false,
+                    "italic": false,
+                    "color": "#000000"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "bounds": {
+            "x": 54.0,
+            "y": 100.0,
+            "width": 400.0,
+            "height": 40.0
+          },
+          "rotation": 0.0,
+          "insets": {
+            "left": 2.880000114440918,
+            "top": 2.880000114440918,
+            "right": 2.880000114440918,
+            "bottom": 2.880000114440918
+          },
+          "paragraphs": [
+            {
+              "alignment": "left",
+              "lineSpacing": 1.190000057220459,
+              "spaceBefore": 0.0,
+              "spaceAfter": 6.0,
+              "runs": [
+                {
+                  "text": "Body content page 2",
+                  "style": {
+                    "family": "Calibri",
+                    "size": 10.0,
+                    "bold": false,
+                    "italic": false,
+                    "color": "#000000"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "width": 612.0,
+      "height": 792.0,
+      "elements": [
+        {
+          "type": "shape",
+          "bounds": {
+            "x": 0.0,
+            "y": 0.0,
+            "width": 612.0,
+            "height": 40.0
+          },
+          "rotation": 0.0,
+          "kind": "rectangle",
+          "fill": "#005AA0",
+          "stroke": {
+            "color": "#000000",
+            "width": 2.0
+          }
+        },
+        {
+          "type": "text",
+          "bounds": {
+            "x": 20.0,
+            "y": 8.0,
+            "width": 400.0,
+            "height": 24.0
+          },
+          "rotation": 0.0,
+          "insets": {
+            "left": 2.880000114440918,
+            "top": 2.880000114440918,
+            "right": 2.880000114440918,
+            "bottom": 2.880000114440918
+          },
+          "paragraphs": [
+            {
+              "alignment": "left",
+              "lineSpacing": 1.190000057220459,
+              "spaceBefore": 0.0,
+              "spaceAfter": 6.0,
+              "runs": [
+                {
+                  "text": "MASTER HEADER",
+                  "style": {
+                    "family": "Calibri",
+                    "size": 10.0,
+                    "bold": false,
+                    "italic": false,
+                    "color": "#000000"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "bounds": {
+            "x": 500.0,
+            "y": 740.0,
+            "width": 80.0,
+            "height": 24.0
+          },
+          "rotation": 0.0,
+          "insets": {
+            "left": 2.880000114440918,
+            "top": 2.880000114440918,
+            "right": 2.880000114440918,
+            "bottom": 2.880000114440918
+          },
+          "paragraphs": [
+            {
+              "alignment": "left",
+              "lineSpacing": 1.190000057220459,
+              "spaceBefore": 0.0,
+              "spaceAfter": 6.0,
+              "runs": [
+                {
+                  "text": "#",
+                  "style": {
+                    "family": "Calibri",
+                    "size": 10.0,
+                    "bold": false,
+                    "italic": false,
+                    "color": "#000000"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "bounds": {
+            "x": 54.0,
+            "y": 100.0,
+            "width": 400.0,
+            "height": 40.0
+          },
+          "rotation": 0.0,
+          "insets": {
+            "left": 2.880000114440918,
+            "top": 2.880000114440918,
+            "right": 2.880000114440918,
+            "bottom": 2.880000114440918
+          },
+          "paragraphs": [
+            {
+              "alignment": "left",
+              "lineSpacing": 1.190000057220459,
+              "spaceBefore": 0.0,
+              "spaceAfter": 6.0,
+              "runs": [
+                {
+                  "text": "Body content page 3",
+                  "style": {
+                    "family": "Calibri",
+                    "size": 10.0,
+                    "bold": false,
+                    "italic": false,
+                    "color": "#000000"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "name": "hexagon",
+  "pages": [
+    {
+      "width": 612.0,
+      "height": 792.0,
+      "elements": [
+        {
+          "type": "image",
+          "bounds": {
+            "x": 70.8,
+            "y": 71.03999999999999,
+            "width": 146.39999999999998,
+            "height": 146.16
+          },
+          "rotation": 0.0,
+          "source": "hexagon.assets-20260930163743-101720/e0.png",
+          "crop": null,
+          "stroke": null
+        }
+      ]
+    }
+  ]
+}

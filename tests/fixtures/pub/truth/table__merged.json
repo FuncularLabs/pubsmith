@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "name": "merged",
+  "pages": [
+    {
+      "width": 612.0,
+      "height": 792.0,
+      "elements": [
+        {
+          "type": "image",
+          "bounds": {
+            "x": 71.75999999999999,
+            "y": 71.75999999999999,
+            "width": 288.23999999999995,
+            "height": 72.24
+          },
+          "rotation": 0.0,
+          "source": "merged.assets-20260930163915-66972/e0.png",
+          "crop": null,
+          "stroke": null
+        }
+      ]
+    }
+  ]
+}

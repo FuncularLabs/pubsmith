@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "name": "on",
+  "pages": [
+    {
+      "width": 612.0,
+      "height": 792.0,
+      "elements": [
+        {
+          "type": "image",
+          "bounds": {
+            "x": 71.03999999999999,
+            "y": 71.03999999999999,
+            "width": 148.07999999999998,
+            "height": 76.08
+          },
+          "rotation": 0.0,
+          "source": "on.assets-20260930163711-39680/e0.png",
+          "crop": null,
+          "stroke": null
+        }
+      ]
+    }
+  ]
+}

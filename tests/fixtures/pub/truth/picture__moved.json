@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "name": "moved",
+  "pages": [
+    {
+      "width": 612.0,
+      "height": 792.0,
+      "elements": [
+        {
+          "type": "image",
+          "bounds": {
+            "x": 100.08,
+            "y": 119.99999999999999,
+            "width": 215.99999999999997,
+            "height": 215.99999999999997
+          },
+          "rotation": 0.0,
+          "source": "moved.assets-20260930163620-19784/e0.png",
+          "crop": null,
+          "stroke": null
+        }
+      ]
+    }
+  ]
+}

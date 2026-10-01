@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "name": "offset",
+  "pages": [
+    {
+      "width": 612.0,
+      "height": 792.0,
+      "elements": [
+        {
+          "type": "image",
+          "bounds": {
+            "x": 71.03999999999999,
+            "y": 71.03999999999999,
+            "width": 152.16,
+            "height": 80.16
+          },
+          "rotation": 0.0,
+          "source": "offset.assets-20260930163703-123016/e0.png",
+          "crop": null,
+          "stroke": null
+        }
+      ]
+    }
+  ]
+}

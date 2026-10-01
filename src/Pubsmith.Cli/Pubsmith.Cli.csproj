@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Pubsmith.Rendering\Pubsmith.Rendering.csproj" />
+    <ProjectReference Include="..\Pubsmith.Core\Pubsmith.Core.csproj" />
+    <ProjectReference Include="..\Pubsmith.PubReader\Pubsmith.PubReader.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>pubsmith</AssemblyName>
+    <RootNamespace>Pubsmith.Cli</RootNamespace>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>

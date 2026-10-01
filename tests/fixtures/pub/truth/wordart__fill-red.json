@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "name": "fill-red",
+  "pages": [
+    {
+      "width": 612.0,
+      "height": 792.0,
+      "elements": [
+        {
+          "type": "image",
+          "bounds": {
+            "x": 71.52,
+            "y": 71.52,
+            "width": 261.12,
+            "height": 51.839999999999996
+          },
+          "rotation": 0.0,
+          "source": "fill-red.assets-20260930164417-16800/e0.png",
+          "crop": null,
+          "stroke": null
+        }
+      ]
+    }
+  ]
+}

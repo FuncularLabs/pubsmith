@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "name": "three-rect-p3",
+  "pages": [
+    {
+      "width": 612.0,
+      "height": 792.0,
+      "elements": [
+        {
+          "type": "shape",
+          "bounds": {
+            "x": 72.0,
+            "y": 72.0,
+            "width": 144.0,
+            "height": 72.0
+          },
+          "rotation": 0.0,
+          "kind": "rectangle",
+          "fill": "#0000FF",
+          "stroke": {
+            "color": "#000000",
+            "width": 2.0
+          }
+        }
+      ]
+    },
+    {
+      "width": 612.0,
+      "height": 792.0,
+      "elements": []
+    },
+    {
+      "width": 612.0,
+      "height": 792.0,
+      "elements": [
+        {
+          "type": "shape",
+          "bounds": {
+            "x": 300.0,
+            "y": 300.0,
+            "width": 100.0,
+            "height": 100.0
+          },
+          "rotation": 0.0,
+          "kind": "rectangle",
+          "fill": "#FF0000",
+          "stroke": {
+            "color": "#000000",
+            "width": 2.0
+          }
+        }
+      ]
+    }
+  ]
+}

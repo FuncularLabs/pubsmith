@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "name": "text-in-oval",
+  "pages": [
+    {
+      "width": 612.0,
+      "height": 792.0,
+      "elements": [
+        {
+          "type": "shape",
+          "bounds": {
+            "x": 72.0,
+            "y": 72.0,
+            "width": 216.0,
+            "height": 144.0
+          },
+          "rotation": 0.0,
+          "kind": "ellipse",
+          "fill": "#5B9BD5",
+          "stroke": {
+            "color": "#000000",
+            "width": 2.0
+          }
+        },
+        {
+          "type": "text",
+          "bounds": {
+            "x": 72.0,
+            "y": 72.0,
+            "width": 216.0,
+            "height": 144.0
+          },
+          "rotation": 0.0,
+          "insets": {
+            "left": 2.880000114440918,
+            "top": 2.880000114440918,
+            "right": 2.880000114440918,
+            "bottom": 2.880000114440918
+          },
+          "paragraphs": [
+            {
+              "alignment": "left",
+              "lineSpacing": 1.190000057220459,
+              "spaceBefore": 0.0,
+              "spaceAfter": 6.0,
+              "runs": [
+                {
+                  "text": "In an oval",
+                  "style": {
+                    "family": "Calibri",
+                    "size": 10.0,
+                    "bold": false,
+                    "italic": false,
+                    "color": "#000000"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

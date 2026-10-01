@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "name": "star5",
+  "pages": [
+    {
+      "width": 612.0,
+      "height": 792.0,
+      "elements": [
+        {
+          "type": "image",
+          "bounds": {
+            "x": 68.88,
+            "y": 68.64,
+            "width": 150.23999999999998,
+            "height": 150.23999999999998
+          },
+          "rotation": 0.0,
+          "source": "star5.assets-20260930163842-124184/e0.png",
+          "crop": null,
+          "stroke": null
+        }
+      ]
+    }
+  ]
+}

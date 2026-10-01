@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "name": "rotated",
+  "pages": [
+    {
+      "width": 612.0,
+      "height": 792.0,
+      "elements": [
+        {
+          "type": "image",
+          "bounds": {
+            "x": 69.36,
+            "y": 12.959999999999999,
+            "width": 255.35999999999999,
+            "height": 190.32
+          },
+          "rotation": 0.0,
+          "source": "rotated.assets-20260930163337-126892/e0.png",
+          "crop": null,
+          "stroke": null
+        }
+      ]
+    }
+  ]
+}

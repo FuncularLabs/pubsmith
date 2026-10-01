@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "name": "margins-10",
+  "pages": [
+    {
+      "width": 612.0,
+      "height": 792.0,
+      "elements": [
+        {
+          "type": "text",
+          "bounds": {
+            "x": 72.0,
+            "y": 72.0,
+            "width": 288.0,
+            "height": 144.0
+          },
+          "rotation": 0.0,
+          "insets": {
+            "left": 10.0,
+            "top": 10.0,
+            "right": 10.0,
+            "bottom": 10.0
+          },
+          "paragraphs": [
+            {
+              "alignment": "left",
+              "lineSpacing": 1.190000057220459,
+              "spaceBefore": 0.0,
+              "spaceAfter": 6.0,
+              "runs": [
+                {
+                  "text": "Hello Example Text world",
+                  "style": {
+                    "family": "Calibri",
+                    "size": 10.0,
+                    "bold": false,
+                    "italic": false,
+                    "color": "#000000"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

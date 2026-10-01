@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "name": "line-arrow",
+  "pages": [
+    {
+      "width": 612.0,
+      "height": 792.0,
+      "elements": [
+        {
+          "type": "image",
+          "bounds": {
+            "x": 71.52,
+            "y": 71.03999999999999,
+            "width": 144.48,
+            "height": 72.96
+          },
+          "rotation": 0.0,
+          "source": "line-arrow.assets-20260930163752-79292/e0.png",
+          "crop": null,
+          "stroke": null
+        }
+      ]
+    }
+  ]
+}

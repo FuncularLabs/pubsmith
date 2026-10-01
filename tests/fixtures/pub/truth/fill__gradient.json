@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "name": "gradient",
+  "pages": [
+    {
+      "width": 612.0,
+      "height": 792.0,
+      "elements": [
+        {
+          "type": "image",
+          "bounds": {
+            "x": 71.03999999999999,
+            "y": 71.03999999999999,
+            "width": 145.92,
+            "height": 73.92
+          },
+          "rotation": 0.0,
+          "source": "gradient.assets-20260930163117-114460/e0.png",
+          "crop": null,
+          "stroke": null
+        }
+      ]
+    }
+  ]
+}

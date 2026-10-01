@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Pubsmith.Cli/Pubsmith.Cli.csproj" />
+    <Project Path="src/Pubsmith.Core/Pubsmith.Core.csproj" />
+    <Project Path="src/Pubsmith.PubReader/Pubsmith.PubReader.csproj" />
+    <Project Path="src/Pubsmith.Rendering/Pubsmith.Rendering.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Pubsmith.Cli.Tests/Pubsmith.Cli.Tests.csproj" />
+    <Project Path="tests/Pubsmith.Core.Tests/Pubsmith.Core.Tests.csproj" />
+    <Project Path="tests/Pubsmith.PubReader.Tests/Pubsmith.PubReader.Tests.csproj" />
+    <Project Path="tests/Pubsmith.Rendering.Tests/Pubsmith.Rendering.Tests.csproj" />
+  </Folder>
+</Solution>

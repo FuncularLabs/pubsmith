@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "name": "rightarrow",
+  "pages": [
+    {
+      "width": 612.0,
+      "height": 792.0,
+      "elements": [
+        {
+          "type": "image",
+          "bounds": {
+            "x": 70.8,
+            "y": 67.67999999999999,
+            "width": 146.39999999999998,
+            "height": 152.64
+          },
+          "rotation": 0.0,
+          "source": "rightarrow.assets-20260930163822-124716/e0.png",
+          "crop": null,
+          "stroke": null
+        }
+      ]
+    }
+  ]
+}

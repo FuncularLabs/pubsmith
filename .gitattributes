@@ -1,0 +1,5 @@
+# Line endings are normalised in the repository; binary test files are never touched.
+* text=auto
+*.pub binary
+*.png binary
+*.jpg binary

@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "name": "arch",
+  "pages": [
+    {
+      "width": 612.0,
+      "height": 792.0,
+      "elements": [
+        {
+          "type": "image",
+          "bounds": {
+            "x": 64.8,
+            "y": 51.599999999999994,
+            "width": 281.52,
+            "height": 48.959999999999994
+          },
+          "rotation": 0.0,
+          "source": "arch.assets-20260930164351-84084/e0.png",
+          "crop": null,
+          "stroke": null
+        }
+      ]
+    }
+  ]
+}

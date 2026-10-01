@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "name": "line-white",
+  "pages": [
+    {
+      "width": 612.0,
+      "height": 792.0,
+      "elements": [
+        {
+          "type": "image",
+          "bounds": {
+            "x": 71.28,
+            "y": 71.28,
+            "width": 261.84,
+            "height": 52.559999999999995
+          },
+          "rotation": 0.0,
+          "source": "line-white.assets-20260930164435-118988/e0.png",
+          "crop": null,
+          "stroke": null
+        }
+      ]
+    }
+  ]
+}

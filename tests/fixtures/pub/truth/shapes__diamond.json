@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "name": "diamond",
+  "pages": [
+    {
+      "width": 612.0,
+      "height": 792.0,
+      "elements": [
+        {
+          "type": "image",
+          "bounds": {
+            "x": 70.55999999999999,
+            "y": 70.55999999999999,
+            "width": 146.88,
+            "height": 146.88
+          },
+          "rotation": 0.0,
+          "source": "diamond.assets-20260930163727-123968/e0.png",
+          "crop": null,
+          "stroke": null
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "name": "rotated-30",
+  "pages": [
+    {
+      "width": 612.0,
+      "height": 792.0,
+      "elements": [
+        {
+          "type": "image",
+          "bounds": {
+            "x": 32.4,
+            "y": 32.4,
+            "width": 295.2,
+            "height": 295.2
+          },
+          "rotation": 0.0,
+          "source": "rotated-30.assets-20260930163636-74008/e0.png",
+          "crop": null,
+          "stroke": null
+        }
+      ]
+    }
+  ]
+}

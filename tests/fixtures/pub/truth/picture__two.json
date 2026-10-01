@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "name": "two",
+  "pages": [
+    {
+      "width": 612.0,
+      "height": 792.0,
+      "elements": [
+        {
+          "type": "image",
+          "bounds": {
+            "x": 72.0,
+            "y": 72.0,
+            "width": 215.99999999999997,
+            "height": 215.99999999999997
+          },
+          "rotation": 0.0,
+          "source": "two.assets-20260930163653-28684/e0.png",
+          "crop": null,
+          "stroke": null
+        },
+        {
+          "type": "image",
+          "bounds": {
+            "x": 319.91999999999996,
+            "y": 72.0,
+            "width": 100.08,
+            "height": 100.08
+          },
+          "rotation": 0.0,
+          "source": "two.assets-20260930163653-28684/e1.png",
+          "crop": null,
+          "stroke": null
+        }
+      ]
+    }
+  ]
+}

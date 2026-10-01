@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "name": "crop-top",
+  "pages": [
+    {
+      "width": 612.0,
+      "height": 792.0,
+      "elements": [
+        {
+          "type": "image",
+          "bounds": {
+            "x": 72.0,
+            "y": 87.11999999999999,
+            "width": 215.99999999999997,
+            "height": 200.88
+          },
+          "rotation": 0.0,
+          "source": "crop-top.assets-20260930163556-49004/e0.png",
+          "crop": null,
+          "stroke": null
+        }
+      ]
+    }
+  ]
+}
