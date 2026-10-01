@@ -13,27 +13,36 @@ internal sealed record Glyph(SKPath Path, float Advance, SKColor Color);
 /// </summary>
 internal static class WordArt
 {
-    public static void Draw(SKCanvas canvas, IReadOnlyList<Glyph> glyphs, SKRect target, TextWarp? warp, SKPaint? outline)
+    /// <summary>
+    /// The glyphs' final outlines, warped, scaled and placed in the target frame, ready to paint. Built once per
+    /// element, so the shadow and the element are drawn from the same paths. The caller disposes them.
+    /// </summary>
+    public static List<(SKPath Path, SKColor Color)> Place(IReadOnlyList<Glyph> glyphs, SKRect target, TextWarp? warp)
     {
         var kind = warp?.Kind ?? WarpKind.None;
-        if (kind is WarpKind.ArchUp or WarpKind.ArchDown or WarpKind.Circle or WarpKind.Button) OnPath(canvas, glyphs, target, kind, outline);
-        else Envelope(canvas, glyphs, target, kind, warp?.Adjust, outline);
+        return kind is WarpKind.ArchUp or WarpKind.ArchDown or WarpKind.Circle or WarpKind.Button
+            ? OnPath(glyphs, target, kind)
+            : Envelope(glyphs, target, kind, warp?.Adjust);
     }
 
-    private static void Paint(SKCanvas canvas, SKPath path, SKColor color, SKPaint? outline)
+    public static void Paint(SKCanvas canvas, IEnumerable<(SKPath Path, SKColor Color)> placed, SKPaint? outline)
     {
-        using var fill = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Fill, Color = color };
-        canvas.DrawPath(path, fill);
-        if (outline is not null) canvas.DrawPath(path, outline);
+        foreach (var (path, color) in placed)
+        {
+            using var fill = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Fill, Color = color };
+            canvas.DrawPath(path, fill);
+            if (outline is not null) canvas.DrawPath(path, outline);
+        }
     }
 
     // ---------- envelopes ----------
 
-    private static void Envelope(SKCanvas canvas, IReadOnlyList<Glyph> glyphs, SKRect t, WarpKind kind, double? adjust, SKPaint? outline)
+    private static List<(SKPath, SKColor)> Envelope(IReadOnlyList<Glyph> glyphs, SKRect t, WarpKind kind, double? adjust)
     {
         var bounds = SKRect.Empty;
         var x = 0f;
-        var placed = new List<(SKPath Path, SKColor Color)>();
+        var laid = new List<(SKPath Path, SKColor Color)>();
+        var result = new List<(SKPath, SKColor)>();
         try
         {
             foreach (var g in glyphs)
@@ -41,10 +50,10 @@ internal static class WordArt
                 var p = new SKPath(g.Path);
                 p.Transform(SKMatrix.CreateTranslation(x, 0));
                 if (!p.IsEmpty) bounds.Union(p.TightBounds);
-                placed.Add((p, g.Color));
+                laid.Add((p, g.Color));
                 x += g.Advance;
             }
-            if (bounds.IsEmpty || bounds.Width <= 0 || bounds.Height <= 0) return;
+            if (bounds.IsEmpty || bounds.Width <= 0 || bounds.Height <= 0) return result;
             var (top, bottom) = Curves(kind, adjust);
             SKPoint Map(SKPoint p)
             {
@@ -53,13 +62,15 @@ internal static class WordArt
                 var tu = top(u); var bu = bottom(u);
                 return new SKPoint(t.Left + u * t.Width, t.Top + (float)(tu + v * (bu - tu)) * t.Height);
             }
-            foreach (var (p, color) in placed)
-            {
-                using var warped = kind == WarpKind.None ? Linear(p, Map) : Bend(p, Map);
-                Paint(canvas, warped, color, outline);
-            }
+            foreach (var (p, color) in laid) result.Add((kind == WarpKind.None ? Linear(p, Map) : Bend(p, Map), color));
+            return result;
         }
-        finally { foreach (var (p, _) in placed) p.Dispose(); }
+        catch
+        {
+            foreach (var (p, _) in result) p.Dispose();
+            throw;
+        }
+        finally { foreach (var (p, _) in laid) p.Dispose(); }
     }
 
     /// <summary>Top and bottom curves in unit coordinates (0 = frame top, 1 = frame bottom) for each envelope.</summary>
@@ -160,10 +171,11 @@ internal static class WordArt
 
     // ---------- glyphs along an ellipse ----------
 
-    private static void OnPath(SKCanvas canvas, IReadOnlyList<Glyph> glyphs, SKRect t, WarpKind kind, SKPaint? outline)
+    private static List<(SKPath, SKColor)> OnPath(IReadOnlyList<Glyph> glyphs, SKRect t, WarpKind kind)
     {
+        var result = new List<(SKPath, SKColor)>();
         var advance = glyphs.Sum(g => g.Advance);
-        if (advance <= 0) return;
+        if (advance <= 0) return result;
 
         // As Publisher draws them: the baseline runs on the ellipse inscribed in the frame (glyphs point outward,
         // or inward for arch-down), and the text is scaled so its advance fills the path length.
@@ -182,11 +194,12 @@ internal static class WordArt
                     .PostConcat(SKMatrix.CreateScale(scale, scale))
                     .PostConcat(SKMatrix.CreateRotationDegrees(angle))
                     .PostConcat(SKMatrix.CreateTranslation(pos.X, pos.Y));
-                using var p = new SKPath(g.Path);
+                var p = new SKPath(g.Path);
                 p.Transform(m);
-                Paint(canvas, p, g.Color, outline);
+                result.Add((p, g.Color));
             }
         }
+        return result;
     }
 
     /// <summary>Arch up / button: upper half, left to right. Arch down: lower half, left to right. Circle: from the left, clockwise.</summary>

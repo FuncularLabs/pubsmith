@@ -21,9 +21,9 @@ internal static class TextRenderer
         public bool BreakAfter { get; set; }      // forced line break after this word
     }
 
+    /// <summary>Draws a text box (not WordArt: see <see cref="PrepareStretched"/>).</summary>
     public static void Draw(SKCanvas canvas, TextElement t, RenderContext ctx)
     {
-        if (t.Fit == TextFit.Stretch) { DrawStretched(canvas, t, ctx); return; }
         var b = t.Bounds;
         var ins = t.Insets;
         var left = (float)(b.X + ins.Left);
@@ -78,13 +78,14 @@ internal static class TextRenderer
     }
 
     /// <summary>
-    /// WordArt-style: all text on one line as glyph outlines, scaled (non-uniformly) so its ink fills the inner
-    /// frame exactly; optional outline stroked on top. Forced breaks are drawn as spaces.
+    /// WordArt-style text, built once: all text on one line as glyph outlines, scaled (non-uniformly) so its ink
+    /// fills the inner frame exactly; optional outline stroked on top. Forced breaks are drawn as spaces.
     /// </summary>
-    private static void DrawStretched(SKCanvas canvas, TextElement t, RenderContext ctx)
+    public static StretchedText PrepareStretched(TextElement t, RenderContext ctx)
     {
         var fonts = new List<SKFont>();
         var glyphs = new List<Glyph>();
+        ctx.GlyphBuilds++;
         try
         {
             foreach (var run in t.Paragraphs.SelectMany(p => p.Runs))
@@ -100,10 +101,10 @@ internal static class TextRenderer
             }
             var b = t.Bounds; var ins = t.Insets;
             var target = SKRect.Create((float)(b.X + ins.Left), (float)(b.Y + ins.Top), (float)(b.Width - ins.Left - ins.Right), (float)(b.Height - ins.Top - ins.Bottom));
-            using var line = t.Outline is { Width: > 0 } o
+            var outline = t.Outline is { Width: > 0 } o
                 ? new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = (float)o.Width, Color = PageRenderer.Color(o.Color), StrokeJoin = SKStrokeJoin.Round }
                 : null;
-            WordArt.Draw(canvas, glyphs, target, t.Warp, line);
+            return new StretchedText(WordArt.Place(glyphs, target, t.Warp), outline);
         }
         finally
         {
@@ -219,5 +220,33 @@ internal static class TextRenderer
             }
             if (i < line.Count - 1) x += line[i].SpaceAfter + extraPerGap;
         }
+    }
+}
+
+/// <summary>WordArt's final glyph outlines and outline paint, built once and drawn for its shadow (if it has one) and for itself.</summary>
+internal sealed class StretchedText(List<(SKPath Path, SKColor Color)> placed, SKPaint? outline) : IDisposable
+{
+    /// <summary>The union of the outlines' bounds (empty when there is no ink); the outline's stroke lies outside it.</summary>
+    public SKRect InkBounds { get; } = Union(placed);
+
+    public float OutlineWidth => outline?.StrokeWidth ?? 0;
+
+    public void Draw(SKCanvas canvas) => WordArt.Paint(canvas, placed, outline);
+
+    public void Dispose()
+    {
+        foreach (var (path, _) in placed) path.Dispose();
+        outline?.Dispose();
+    }
+
+    private static SKRect Union(List<(SKPath Path, SKColor Color)> placed)
+    {
+        var r = SKRect.Empty;
+        foreach (var (path, _) in placed)
+        {
+            if (path.IsEmpty) continue;
+            if (r.IsEmpty) r = path.Bounds; else r.Union(path.Bounds);
+        }
+        return r;
     }
 }

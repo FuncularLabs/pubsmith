@@ -34,10 +34,14 @@ public static class Exporter
     /// <summary>Renders a page to an opaque bitmap (white paper) at the given resolution.</summary>
     public static SKBitmap RenderBitmap(Page page, double dpi, RenderContext ctx)
     {
+        ArgumentNullException.ThrowIfNull(ctx);
+        ctx.ThrowIfDisposed();
         var (w, h) = PixelSize(page, dpi);
         var bmp = new SKBitmap(new SKImageInfo(w, h, SKColorType.Rgba8888, SKAlphaType.Premul));
+        var previous = ctx.Target;
         try
         {
+            ctx.Target = RenderTarget.Bitmap;
             using var canvas = new SKCanvas(bmp);
             canvas.Clear(SKColors.White);
             canvas.Scale((float)(dpi / 72));
@@ -49,11 +53,14 @@ public static class Exporter
             bmp.Dispose();
             throw;
         }
+        finally { ctx.Target = previous; }
     }
 
     public static void ToPng(Page page, double dpi, RenderContext ctx, Stream output)
     {
         ArgumentNullException.ThrowIfNull(output);
+        ArgumentNullException.ThrowIfNull(ctx);
+        ctx.ThrowIfDisposed();
         using var bmp = RenderBitmap(page, dpi, ctx);
         using var data = bmp.Encode(SKEncodedImageFormat.Png, 100);
         data.SaveTo(output);
@@ -64,16 +71,24 @@ public static class Exporter
     {
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(output);
+        ArgumentNullException.ThrowIfNull(ctx);
+        ctx.ThrowIfDisposed();   // before anything is written to the caller's stream
         if (document.Pages.Count == 0) throw new ArgumentException("The document has no pages.", nameof(document));
         foreach (var page in document.Pages) CheckPageSize(page);
 
-        using var pdf = SKDocument.CreatePdf(output);
-        foreach (var page in document.Pages)
+        var previous = ctx.Target;
+        try
         {
-            var canvas = pdf.BeginPage((float)page.Width, (float)page.Height);
-            PageRenderer.Render(canvas, page, ctx);
-            pdf.EndPage();
+            ctx.Target = RenderTarget.Pdf;
+            using var pdf = SKDocument.CreatePdf(output);
+            foreach (var page in document.Pages)
+            {
+                var canvas = pdf.BeginPage((float)page.Width, (float)page.Height);
+                PageRenderer.Render(canvas, page, ctx);
+                pdf.EndPage();
+            }
+            pdf.Close();
         }
-        pdf.Close();
+        finally { ctx.Target = previous; }
     }
 }
