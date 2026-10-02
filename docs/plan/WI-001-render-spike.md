@@ -69,6 +69,7 @@ Test names corrected on 2026-09-30 to the tests as written (the first draft used
 | `FontResolver.Resolve(family, bold, italic)` / `SplitStyle` | FontAndWarningTests |
 | `ImageComparer.Score(SKBitmap, SKBitmap)` / `Score(path, path)` | ImageComparerTests, Fidelity |
 | `RenderContext.Warnings` / `BaseDirectory` | FontAndWarningTests, LimitsTests, CliTests |
+| `RenderContext.Dispose` / `MaxPicturePixels` / `PictureCacheBudget`, `RenderWarning.ImageTooLarge` (WI-005) | RenderContextTests, PictureCacheTests |
 | `CliApp.Run(args, stdout, stderr)` | CliTests |
 
 Coverage floor: ≥ 85 % line coverage per touched file (coverlet `XPlat Code Coverage`, cobertura).
@@ -92,6 +93,9 @@ tests don't depend on files outside the repository.
 - **Units:** points (1/72 in), stored as `double`. The page origin is the top-left corner, with y pointing down, like Publisher.
 - **One drawing path:** `PageRenderer` draws to an `SKCanvas`. PNG uses a raster canvas, and PDF uses
   `SKDocument.CreatePdf`. Screen and print can't drift apart because they share the code.
+  Since WI-005 the exporters tell the renderer which they are drawing: a bitmap draws pictures from a decoded
+  copy, a PDF embeds each picture at most once per distinct crop, and a shadow's line width is judged at 300 dpi for a PDF; otherwise the
+  drawing is the same code.
 - **Format:** JSON (System.Text.Json), `schemaVersion: 1`. Elements use a type discriminator.
   Colours are `#RRGGBB[AA]` strings. Image sources are paths relative to the document file.
 - **Fonts:** resolved via `SKFontManager`. A substitute always produces a warning (the cloud-font risk).

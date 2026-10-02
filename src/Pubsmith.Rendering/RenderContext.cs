@@ -5,15 +5,40 @@ public sealed record RenderWarning(string Code, string Message)
 {
     public const string FontSubstituted = "font-substituted";
     public const string ImageMissing = "image-missing";
+    /// <summary>The image file could not be read (an I/O error), or it could not be decoded; the message says which.</summary>
     public const string ImageUnreadable = "image-unreadable";
     /// <summary>The image path is outside the document's folder, a network or device path, or not a valid path; it was not opened.</summary>
     public const string ImageRefused = "image-refused";
+    /// <summary>The image declares more pixels than <see cref="RenderContext.MaxPicturePixels"/>; it was read but not decoded.</summary>
+    public const string ImageTooLarge = "image-too-large";
 }
 
-/// <summary>Per-render settings and the warnings collected while rendering.</summary>
-public sealed class RenderContext(string? baseDirectory = null, FontResolver? fonts = null)
+/// <summary>The kind of canvas being drawn: a caller's own (through <see cref="PageRenderer.Render"/>), or the exporters' bitmap or PDF.</summary>
+internal enum RenderTarget { Canvas, Bitmap, Pdf }
+
+/// <summary>
+/// Per-render settings, the warnings collected while rendering, and the pictures opened, with decoded copies for
+/// bitmaps (kept within <see cref="PictureCacheBudget"/>).
+/// A context keeps what it first found for each picture file: it does not see the file change, or appear after it was
+/// missing; only a file it could not read (an I/O error, such as another program's lock) is tried again. So use a new
+/// context after pictures change. One context per command, used on one thread; dispose it to release its
+/// pictures (a context never disposed releases them when it is collected). After <see cref="Dispose"/>, rendering
+/// with it throws <see cref="ObjectDisposedException"/>.
+/// </summary>
+public sealed class RenderContext(string? baseDirectory = null, FontResolver? fonts = null) : IDisposable
 {
+    /// <summary>A picture declaring more pixels than this is drawn as a placeholder, never decoded (no real photo comes near).</summary>
+    public const long MaxPicturePixels = 250_000_000;
+
+    /// <summary>Decoded pictures kept for bitmap output, in pixels (4 bytes each); a larger picture is drawn uncached.</summary>
+    public const long PictureCacheBudget = 100_000_000;
+
+    /// <summary>Limits other than the defaults, for tests.</summary>
+    internal RenderContext(string? baseDirectory, long maxPicturePixels, long cacheBudget, FontResolver? fonts = null) : this(baseDirectory, fonts)
+        => Pictures = new PictureCache(maxPicturePixels, cacheBudget);
+
     private readonly List<RenderWarning> _warnings = [];
+    private bool _disposed;
     private readonly HashSet<string> _seen = new(StringComparer.Ordinal);
 
     /// <summary>
@@ -28,6 +53,23 @@ public sealed class RenderContext(string? baseDirectory = null, FontResolver? fo
     public FontResolver Fonts { get; } = fonts ?? new FontResolver();
 
     public IReadOnlyList<RenderWarning> Warnings => _warnings;
+
+    internal PictureCache Pictures { get; private set; } = new(MaxPicturePixels, PictureCacheBudget);
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        Pictures.Dispose();
+    }
+
+    internal void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
+
+    /// <summary>How many times WordArt glyph paths were built (diagnostics and tests).</summary>
+    internal int GlyphBuilds { get; set; }
+
+    /// <summary>What the canvas being drawn is, as <see cref="Exporter"/> sets it while it renders; otherwise a caller's own canvas.</summary>
+    internal RenderTarget Target { get; set; }
 
     /// <summary>Records a warning once; the same code and message repeated (e.g. per page) is kept once.</summary>
     internal void Warn(string code, string message)

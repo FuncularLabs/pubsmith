@@ -87,7 +87,7 @@ public static class CliApp
             }
             if (doc.Pages.Count == 0) { stderr.WriteLine("error: the document has no pages."); return Failed; }
 
-            var ctx = new RenderContext(baseDirectory);
+            using var ctx = new RenderContext(baseDirectory);   // owns the pictures it opens
             try
             {
                 if (pdf is not null)

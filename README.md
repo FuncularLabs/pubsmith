@@ -36,7 +36,7 @@ before 2003 are not supported. There's no editor UI yet.
 |---|---|
 | `src/Pubsmith.PubReader` | Native `.pub` reader: compound file, OfficeArt shapes, Publisher's Contents and Quill (text) streams, and the importer that maps them onto the document model |
 | `src/Pubsmith.Core` | Document model (pages, shapes, images, text), JSON format with schema versioning |
-| `src/Pubsmith.Rendering` | SkiaSharp renderer. One drawing path for PNG and PDF. Also font resolution with substitution warnings, and the image comparer used for fidelity tests |
+| `src/Pubsmith.Rendering` | SkiaSharp renderer. One drawing path for PNG and PDF. Also font resolution with substitution warnings, and the image comparer used for fidelity tests. A `RenderContext` reads each picture once, keeps decoded copies within a budget, and owns them; it keeps what it first found for each picture file (only a file it could not read is tried again), so use one per command, on one thread, and dispose it |
 | `src/Pubsmith.Cli` | The `pubsmith` command: `render` (a `.pub` or a document JSON to PDF/PNG) and `import` (a `.pub` to a document JSON) |
 | `tests/` | xUnit tests. `tests/fixtures/pub` holds the Publisher-built feature files with Publisher's own layout export and renders of them, which are the expected results |
 | `tools/oracle` | Publisher automation: the harvest export, the feature and diff corpus builders, the layout export, and the PubOracle VM inbox scripts |
