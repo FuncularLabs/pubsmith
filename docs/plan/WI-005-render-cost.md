@@ -23,7 +23,8 @@ canvas is judged at 300 dpi, any other canvas at its own scale (S2); rotated lay
 WI-006's F8 note (S7). After four plan reviews whose last findings came with measured fixes, the next independent
 check is the code review. Rev 6 answers the code review's first round (F1–F4, N1–N7), rev 7 its second (R2-F1–F4, R2-N1–N2), rev 8 its
 third (R3-N1–N3), rev 9 its fourth (R4-N1–N4), rev 10 its fifth (R5-N1–N3); see "Code review" below. The
-reviews are maintainers' notes kept outside this repository; what each one changed is recorded here.
+reviews are maintainers' notes kept outside this repository; what each one changed is recorded here. Rev 11, after the
+sixth round was clean, takes up the points the reviews left as non-blocking (A1–A4; see "After the review").
 
 ## Measurements (2026-10-01, before this work)
 
@@ -57,7 +58,7 @@ picture placements; largest picture 14.4 megapixels; most distinct picture megap
 | AC1 | **A shadow no longer costs a page-sized layer.** (a) PNG at 150 dpi: a page of shadowed elements takes at most 4× the same page unshadowed (each the minimum of 5 timed runs after a warm-up), for opaque shapes, translucent shapes, text boxes and small pictures. (b) PDF: a shadowed opaque shape writes no image (a rectangle adds under 64 bytes); every other shadow writes an image no larger than its layer, which is: for a shape or a picture, the frame plus (2 × line width + 1 pt) on every side; for a text box, the frame; for WordArt, its ink box (measured from a 72-dpi raster of the element alone) plus (2 × outline width + 1 pt) on every side; each plus 2 pt of slack, and for a rotated element the bounding box of that rectangle turned by the element's rotation. Today every such image is 612 × 792. (c) WordArt builds its glyph paths once per element, shadow or not. |
 | AC2 | **Shadows look as before.** At 150 dpi on a 300 × 200 pt page, each kind of shadow matches the previous algorithm (the element, drawn by the public renderer, through a colour-filtered layer) within ImageComparer score 0.1: opaque shape; outline-only shape; ellipse; rotated opaque shape; translucent fill and line under a translucent shadow; alpha-0 fill with an opaque line; rotated picture; oval-masked picture with a line; picture with transparency; rotated text box; WordArt envelope, arch and circle with outlines; negative-size translucent shape; negative-size picture with a line; negative-size opaque shape with a line; a ¼ pt and a ½ pt line on a rectangle and on an ellipse; an opaque rectangle with a coloured translucent shadow, and an opaque ellipse with Publisher's grey (128, 128, 128) shadow; an opaque fill with a translucent line, on a rectangle and on an ellipse; a shape with neither fill nor line, and one with an alpha-0 fill and no line (both cast nothing); WordArt with an 8 pt outline; and a translucent ellipse with a line, within 0.2 (a bounded layer can differ from a page-sized one at a few edge pixels: measured worst 0.170). Where elements overlap, each shadow is drawn just before its own element, so it falls over the elements before it. The same holds through the public `PageRenderer.Render` on a caller's own raster canvas at 72 and 96 dpi (it is judged at its own scale), also after the same context has made a bitmap or a PDF, whether that exporter returned or threw. The silhouette the renderer chooses for a PDF canvas is as fine as at 300 dpi. |
 | AC3 | **Pictures look as before.** Bitmaps draw each picture exactly as today (the crop's source rectangle scaled into the frame, under the oval mask), from the decoded copy: uncropped, cropped, cropped on one side in a fractional frame, cropped with an oval mask and a line, rotated and cropped all match today's drawing within score 0.1; a JPEG with each of the 8 EXIF orientations is drawn as today's encoded-image drawing turns it, in PNG; in a PDF it is embedded turned (orientation 6: a 40 × 60 image for a 60 × 40 stored picture). Every page of the 192 harvested files at 150 dpi stays within 0.1 of the same page rendered by `3573075` (the procedure below). |
-| AC4 | **A picture is read once, decoded once while it fits the cache budget, and embedded at most once per PDF per distinct crop.** Within one `RenderContext`: each picture file is read once, so the context does not see later changes to it; a file that could not be read (an I/O error, such as another program's lock) is read again at its next lookup (a placement looks it up once, a shadowed one twice). For bitmap output a picture no larger than the cache budget (default 100,000,000 pixels) is decoded once, on its first bitmap placement, and kept while the decoded pictures fit the budget (least recently used dropped first, before the next decode); a larger picture, or one whose copy cannot be allocated at that moment, is drawn from its encoded image, as today (the copy is tried again at its next bitmap draw). In a PDF each picture is embedded at most once for each distinct crop (a JPEG passes through, not decoded by us). A PDF made after a bitmap render with the same context still passes JPEGs through. A missing or undecodable picture is a placeholder at every placement, and an unreadable one at every placement where it cannot be read, with today's warning codes (`image-missing`, `image-unreadable`; the message of `image-unreadable` says whether the file could not be read or could not be decoded) (kept once per code and message, so two spellings of one path warn twice, as today). |
+| AC4 | **A picture is read once, decoded once while it fits the cache budget, and embedded at most once per PDF per distinct crop.** Within one `RenderContext`: each picture file is read once, so the context does not see later changes to it; a file that could not be read (an I/O error, such as another program's lock) is read again at its next lookup (a placement looks it up once, a shadowed one twice). For bitmap output a picture no larger than the cache budget (default 100,000,000 pixels) is decoded once, on its first bitmap placement, and kept while the decoded pictures fit the budget (least recently used dropped first, before the next decode); a larger picture, or one whose copy cannot be allocated at that moment, is drawn from its encoded image, as today (the copy is tried again at its next bitmap draw). In a PDF each picture is embedded at most once for each distinct crop, not decoded by us: SkPDF writes a JPEG's own bytes when it can, and decodes and writes again (Flate) one it cannot, such as a JPEG whose EXIF orientation is not 1 or a CMYK JPEG. A PDF made after a bitmap render with the same context still draws the encoded image, so a JPEG that passed through before still does. A missing or undecodable picture is a placeholder at every placement, and an unreadable one at every placement where it cannot be read, with today's warning codes (`image-missing`, `image-unreadable`; the message of `image-unreadable` says whether the file could not be read or could not be decoded) (kept once per code and message, so two spellings of one path warn twice, as today). |
 | AC5 | **A picture declaring more than 250,000,000 pixels (by default) is never decoded or embedded:** its declared size is read from its header first (as a 64-bit number), and it is drawn as the placeholder with the warning `image-too-large` (which says it was not decoded: the file is read), in PNG and in PDF. |
 | AC6 | **Nothing else changes:** the real-file gate stays at 19/106 pages ≤ 3.0, median 8.63 (± 0.05), text 429/432; every existing test passes without change (a `RenderContext` that is never disposed releases its pictures when it is collected). |
 
@@ -66,7 +67,9 @@ picture placements; largest picture 14.4 megapixels; most distinct picture megap
 - **What a canvas is:** `Exporter.RenderBitmap` and `Exporter.ToPdf` mark the context with the output they are
   drawing (internal: bitmap or PDF; cleared in a `finally`). On a bitmap, a cacheable picture comes from its decoded
   copy. Every other canvas (PDF, or a caller's own canvas through the public `PageRenderer.Render`) draws the encoded
-  image, as today, so a PDF embeds it at most once per distinct crop and passes a JPEG through. Only the PDF mark makes the renderer
+  image, as today, so a PDF embeds it at most once per distinct crop, and SkPDF writes a JPEG's own bytes when it can
+  (one it cannot pass through, such as an EXIF-turned or CMYK JPEG, it decodes and writes again, still at most once per
+  distinct crop). Only the PDF mark makes the renderer
   judge line widths at 300 dpi; every other canvas is judged at its own scale (from its matrix).
 - **Shadow, opaque shape** (no fill or an opaque fill; no line, or an opaque line at least 1.5 device pixels wide at
   the canvas's scale, taken as 300 dpi for a PDF-marked canvas; a fill of alpha 0 counts as no fill), drawn with no layer, the
@@ -108,7 +111,7 @@ picture placements; largest picture 14.4 megapixels; most distinct picture megap
 |---|---|---|
 | AC1a | `ShadowCostTests.ShadowedPages_CostAboutTheirElements_InPng` (theory: 400 opaque rectangles; 400 translucent rectangles; 100 text boxes of 1,000 characters; 100 placements of a 60 × 40 picture; ratio of 5-run minima ≤ 4) | red (measured): 614×, 631×, 62×, 15×. Mutations: translucent shape's layer unbounded; text layer unbounded; picture layer unbounded. |
 | AC1b | `ShadowCostTests.AShadowedOpaqueShape_WritesNoImage_InPdf` (500 rectangles with a 1 pt line, which a 72-dpi judgement would layer: < 64 B each, no image; 500 ellipses: no image; 100 rectangles with a ½ pt line, which a 150-dpi judgement would layer: no image) | red: 2,385 B and a 612 × 792 image each. Mutations: opaque shape through a (bounded) layer; a PDF judged at 150 dpi. |
-| AC1b | `ShadowCostTests.EveryLayeredShadow_WritesNoMoreThanItsLayer_InPdf` (theory: translucent shape with a 6 pt line, the same rotated 30°, text box, picture of 60 × 40 px in a 120 × 80 pt frame, WordArt envelope, WordArt arch; every image's size ≤ the AC1b bound computed in the test, WordArt's ink box from a 72-dpi raster of the element alone) | red: 612 × 792. Mutations: each layer unbounded; WordArt layer the page. |
+| AC1b | `ShadowCostTests.EveryLayeredShadow_WritesNoMoreThanItsLayer_InPdf` (theory: translucent shape with a 6 pt line, the same rotated 30°, text box, picture of 60 × 40 px in a 120 × 80 pt frame, WordArt envelope, WordArt arch; every image's size ≤ the AC1b bound computed in the test, WordArt's ink box from a 72-dpi raster of the element alone) | red: 612 × 792. Mutations: each layer unbounded; WordArt layer the page; every layer 1 pt wider on every side (rev 11: the rotated row fails it, 210 × 184 against 208.15 × 182.53). |
 | AC1c | `ShadowCostTests.WordArt_BuildsItsGlyphsOnce` (internal glyph-build counter: 1 per element with or without a shadow) | red: 2. Mutation: shadow drawn by a second full draw. |
 | AC2 | `ShadowLookTests.EveryKindOfShadow_LooksAsBefore` (the 28 kinds of AC2, thin lines at (60, 50); oracle through the public renderer) + `TheOracle_SeesADifferentShadow` | Mutations: silhouette without the line; fill and line as two shadow fills (double alpha); translucent shape through the silhouette; alpha-0 fill kept; thin lines through the silhouette; the thin-line rule for ellipses only; `GetFillPath` at resolution 1; bounds without the rotation; WordArt frame-only bounds; bounds without the line or outline; frame not sorted (layers or silhouettes); silhouette drawn black (the shadow's colour ignored); the line's alpha ignored; a shape with neither fill nor line casts a shadow; WordArt's layer margin without its outline. |
 | AC2 | `ShadowLookTests.ShadowsAreDrawnElementByElement` (every shadow route, each casting onto the opaque shape drawn just before it: an opaque shape's silhouette, and the layers of a translucent shape, a picture, a text box and WordArt) | Mutations: every non-WordArt shadow drawn first, in one pass; and, one route at a time, the shadows of opaque shapes, translucent shapes, pictures, text boxes, WordArt, or pictures and text boxes together drawn first. |
@@ -118,7 +121,8 @@ picture placements; largest picture 14.4 megapixels; most distinct picture megap
 | AC3 | `PictureLookTests.EveryPicture_LooksAsBefore` (theory: uncropped, cropped, cropped on one side in a fractional frame, cropped + oval + line, rotated + cropped; oracle: a test copy of today's `DrawImage`) + `TheOracle_SeesACropOffByAFewPixels` | Mutations: crop offset by one source pixel; no oval mask; source rectangle ignored. |
 | AC3 | `PictureLookTests.EveryExifOrientation_IsDrawnAsToday` (theory over orientations 1–8: PNG through the cache vs today's encoded-image drawing, score ≤ 0.1), `AnExifRotatedJpeg_IsDrawnTurned` (orientation 6 pixel check) and `AnExifRotatedJpeg_IsEmbeddedTurned_InPdf` (orientation 6 → a 40 × 60 image) | Mutation: decode with `SKCodec.GetPixels` or `SKBitmap.Decode` (ignore orientation). |
 | AC4 | `PictureCacheTests.APictureRepeated_IsEmbeddedOnceInThePdf` (50 placements on 5 pages, PDF < 1.5 × one placement's) | red: 50×. Mutation: a new `SKImage` per draw. |
-| AC4 | `PictureCacheTests.AJpeg_PassesThroughThePdf_EvenAfterABitmapRender` (a JPEG: one DCTDecode image, decode counter 0; then `RenderBitmap` and `ToPdf` with the same context: still DCTDecode) | Mutations: bitmap mark always on; mark not cleared. |
+| AC4 | `PictureCacheTests.AJpeg_PassesThroughThePdf_EvenAfterABitmapRender` (a JPEG written by SkiaSharp, with no EXIF: one DCTDecode image, decode counter 0; then `RenderBitmap` and `ToPdf` with the same context: still DCTDecode) | Mutations: bitmap mark always on; mark not cleared. |
+| AC4 | `PictureCacheTests.AJpegInThePdf_IsReencodedWhenTurnedOrCmyk_AndEmbeddedOnce` (rev 11; theory: that JPEG with no EXIF and with each EXIF orientation 1–8, and a CMYK JPEG; 20 placements over two pages: one image, DCTDecode with no EXIF or orientation 1, FlateDecode otherwise; decode counter 0) | Mutations: a new `SKImage` per lookup; the decoded copy drawn into PDFs (each fails all 10 rows). The FlateDecode rows pin SkPDF's choice, not ours: a SkiaSharp update that changes it fails them, and every statement of the rule is then checked: this revision's (the `PictureCache` summary, the `DrawImage` comment, this test's comment, the Design and AC4) and WI-006's, wherever a search of src, tests, docs and README for "EXIF", "CMYK" and "pass" finds them. |
 | AC4 | `PictureCacheTests.APictureRepeated_IsReadAndDecodedOnce` (file-read and decode counters, 50 placements over 5 PNG pages → 1 and 1) | red. Mutations: decode per draw; read per draw. |
 | AC4 | `PictureCacheTests.TheLeastRecentlyUsedIsDropped` (injected budget for two; A B A C A → 3 decodes and decoded pixels ≤ budget throughout; A B C A → 4) | Mutations: never evict (pixels over budget); evict the most recent (A B A C A → 4); evict after decoding (over budget during the decode). |
 | AC4 | `PictureCacheTests.APictureOverTheBudget_IsDrawnUncached` (injected budget below a picture: decode counter 0, drawn correctly) | Mutation: cached anyway (pixels over budget). |
@@ -161,6 +165,8 @@ read and decode counters, budget, injected limits) → `PictureCacheTests`; the 
    what still costs; limits are WI-006).
 7. Code review, rounds 1 to 5 (revs 6 to 10): the tests first, then the fixes, listed under "Code review"; the
    battery of mutations, the suites, coverage and the real pages again.
+8. After the review (rev 11): the non-blocking points, each test first where one can be written, listed under
+   "After the review".
 
 ## Results (2026-10-01)
 
@@ -191,10 +197,10 @@ Release build; a range is the two runs):
 - **Look (AC2, AC3):** every page of the 192 files at 150 dpi scores at most **0.005** against `3573075` (269
   pages; bound 0.1). The look tests (shadows: 28 kinds, each also on a caller's own canvas at 72 and 96 dpi, and
   overlapping elements; pictures: 5 kinds and 8 EXIF orientations, PNG and PDF) pass.
-- **Gate (AC6):** unchanged: 19/106 pages ≤ 3.0, median 8.63; text 429/432 (run on the round-1 code; no later revision changes the drawing of a readable picture, and every real page still scores at most 0.005).
-- **Tests:** Core 30, CLI 32, PubReader 395 (+3 opt-in), Rendering 266.
+- **Gate (AC6):** unchanged: 19/106 pages ≤ 3.0, median 8.63; text 429/432 (run on the round-1 code; no later revision changes what a real page draws, and every real page still scores at most 0.005).
+- **Tests:** Core 30, CLI 32, PubReader 395 (+3 opt-in), Rendering 266 (at rev 10; rev 11's are under "After the review").
 - **Mutations:** 92, each named with the test that must kill it: shadow routes, bounds and colour; thin and translucent lines; invisible shapes; z-order on each shadow route; the PDF and caller-canvas scales; both output marks, set before drawing and restored on return and on a throw, wherever a check before drawing stands; WordArt's single build; the picture look (crop, mask, source rectangle, orientation); the cache's reads, each verdict remembered and the read failure retried (not given up after 1, 5 or 20 failures), decodes, allocation, eviction and keys; the size check; both warning texts; `Dispose`. All killed (a maintainer's script kept with the review notes, outside this repository; it rebuilds after its last restore).
-- **Coverage** (all four suites, merged per file): PageRenderer, TextRenderer, RenderContext and Exporter 100 %, CliApp 99.2 %, WordArt 97.3 %, PictureCache 96.5 %; the uncovered lines are failure paths no test input reaches (a WordArt envelope that fails, the CLI's warning when its scratch folder cannot be deleted, a decoded copy whose pixels cannot be read back).
+- **Coverage** (all four suites, merged per file): PageRenderer, TextRenderer, RenderContext and Exporter 100 %, CliApp 99.2 %, WordArt 97.3 %, PictureCache 96.5 %; the uncovered lines are failure paths no test input reaches (a WordArt envelope that fails, the CLI's warning when its scratch folder cannot be deleted, a decoded copy whose pixels cannot be read back). At rev 10; rev 11's are under "After the review".
 
 ## Code review
 
@@ -263,6 +269,61 @@ not), no defect in the code.
 | R5-N1 | The mark test's comment said a check made before drawing would throw elsewhere; a check kept in `PageRenderer`, or a pre-pass that draws to a recorder, throws there too, so "restored on return only" passed | TEST-GAP | the test no longer asks where the throw came from: the drawing call that throws has first drawn something as only the exporter's mark draws it (a decode; a silhouette shadow, beside a picture SkPDF writes when drawn), so the mark was set when it threw; the reviewer's mutants added |
 | R5-N2 | "65-byte" for a liar PNG of 57 bytes | HOUSE-RULE | 57 |
 | R5-N3 | The Gate sentence named revisions 6 to 8 | PLAN-GAP | it names none |
+
+Round 6, on rev 10: clean.
+
+## After the review (rev 11)
+
+Four non-blocking points were kept out of the reviewed commit, so that its tree stayed the one reviewed; rev 11 takes
+them up. It was replayed onto main after WI-006 merged (`f859dcb`). Nothing a real page draws changes: the only code
+change adds a `catch` block to `PrepareStretched`, which only an exception reaches (WI-006 had given the path warps the
+same `catch`); the rest is comments, documents and tests.
+
+| # | Finding | Blame | Fix |
+|---|---|---|---|
+| A1 | "A JPEG passes through" (the `PictureCache` summary, the `DrawImage` comment, the Design and AC4) is false for a JPEG whose EXIF orientation is not 1: SkPDF decodes it and writes it again as Flate, once for the test's 20 uncropped placements over two pages (at most once per distinct crop, as AC4 says). Checking that found the same for a CMYK JPEG, a kind Publisher stores (blip type 0xF02A in `pub-format-notes.md`) and the importer writes out as a `.jpg`; the review found a third kind, a JPEG coded as RGB (Adobe transform 0), hence "such as" | TEST-GAP | each copy says what SkPDF does, without claiming those are the only JPEGs it decodes (WI-006's plan has since replaced its F8 note with a rule of its own, which counts turned and CMYK JPEGs as decoded); `AJpegInThePdf_IsReencodedWhenTurnedOrCmyk_AndEmbeddedOnce` pins both kinds (AC4's test used one JPEG with no EXIF) |
+| A2 | The Gate sentence said no later revision changes "the drawing of a readable picture"; rev 6 changed one case (a decoded copy that cannot be allocated now draws the encoded image instead of throwing) | PLAN-GAP | "what a real page draws" |
+| A3 | `WordArt`'s path warps did not dispose the paths already built when an exception was thrown (envelopes did), and `PrepareStretched` did not dispose its outline paint when placing the glyphs threw | HOUSE-RULE | `PrepareStretched` disposes its paint and rethrows, as the envelope does with its paths; WI-006 made the same change to the path warps; no test (below) |
+| A4 | `EveryLayeredShadow_WritesNoMoreThanItsLayer_InPdf` allowed a rotated layer 2 pt more than AC1b's bound | TEST-GAP | the test's bound is AC1b's. AC1b holds as written: SkPDF rounds the layer's bounds out to whole pixels (1 pt each here), adding under 2 pt on each axis, and the 2 pt slack turned by the rotation θ adds 2(\|cos θ\| + \|sin θ\|), at least 2 pt. The headroom nears 0 at multiples of 90° (0.003 pt at 0.001°, in the review's probe), so the slack cannot be trimmed. Two throwaway probes, of 27 and 144 rotated layers, found none over the bound. A layer 1 pt wider on every side, which the Rendering suite passed at rev 10, now fails the rotated row (and, since WI-006, five rows of its layer-cap test) |
+
+No test for A3. `WordArt.Place` can throw when an allocation fails (SkiaSharp has an exception for a native path, path
+builder or path measure it cannot make) and, since WI-006, at a checkpoint that finds a render limit passed, which a
+test can reach. But no test can see whether the paths built before the throw, or the outline paint, were disposed:
+they never leave `Place` and `PrepareStretched`, and SkiaSharp keeps no table of live `SKPath` or `SKPaint` objects
+(both implement `ISKSkipObjectRegistration`). Seeing it would need a hook in the production code for that alone. In
+either route, a path made but not yet added to its list when an exception comes is still not disposed; only `List.Add`
+running out of memory could throw there (WI-006's checkpoints come before each path is made).
+
+Checks on rev 11 as replayed onto main (`f859dcb`):
+
+- **Tests:** Core 33, CLI 53, PubReader 395 (+3 opt-in), Rendering 642 (+8 opt-in; A1 adds 10 rows); the build has no
+  warnings.
+- **Mutations** (applied by hand, each restored, then a rebuild before the suites): A1's two mutations each fail all
+  10 rows; A4's wider layer fails the rotated row and five rows of WI-006's
+  `CrashGuardTests.APdfLayerOverItsCap_IsRefusedBeforeTheLayer`. A3 has none (above).
+- **Coverage** (all four suites, merged per file): PageRenderer, TextRenderer and WordArt 100 %, PictureCache 97.0 %;
+  WI-006's tests now run all three `catch` blocks (though none can see the disposal), and the uncovered lines are a
+  decoded copy whose pixels cannot be read back.
+- **Not run for rev 11:** the opt-in corpus suite, WI-006's opt-in calibration suite and the real pages, since nothing
+  drawn changed.
+
+Round 7, on rev 11 before it was committed: not clean (three nits), no defect in the code or tests. Rev 11 is amended
+in place:
+
+| # | Finding | Blame | Fix |
+|---|---|---|---|
+| R7-N1 | The Design's "still once" and A1's "once for all its placements" claimed too much: placed with three distinct crops, the 16 × 16 CMYK JPEG was written three times | PLAN-GAP | "at most once per distinct crop"; A1 says the test's placements are uncropped |
+| R7-N2 | A4's "the closest by 0.28 pt" could be read as headroom; near multiples of 90° it is almost 0 | PLAN-GAP | why AC1b holds, and that the slack cannot be trimmed |
+| R7-N3 | The new test's row said "the sentences above"; several copies are not above it | PLAN-GAP | the row names every copy |
+
+Round 8, on rev 11 as first committed: not clean (one nit, caused by the previous fix). Rev 11 had dropped its edit
+of WI-006's F8, leaving the rule to WI-006's plan to restate, and with it took WI-006 off the test row's list of copies,
+though WI-006 still states the rule (R8-N1, PLAN-GAP). The row names WI-006's plan again.
+
+Round 9, on rev 11 as replayed onto main: not clean (one nit, the third on the row's list of copies after R7-N3 and
+R8-N1). Its list of WI-006's statements left out two that its own search finds: `PageRenderer.PassesThroughPdf`'s
+summary and WI-006's test comments (R9-N1, PLAN-GAP). The row no longer lists WI-006's statements; it gives the search
+that finds them.
 
 ## Not in scope
 
