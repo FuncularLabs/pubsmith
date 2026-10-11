@@ -9,23 +9,48 @@ namespace Pubsmith.Rendering;
 /// </summary>
 public static class PageRenderer
 {
-    public static void Render(SKCanvas canvas, Page page, RenderContext ctx)
+    public static void Render(SKCanvas canvas, Page page, RenderContext ctx) => Render(canvas, page, ctx, pageNumber: null);
+
+    /// <param name="pageNumber">The page's number (from 1) when the caller knows it, for refusals.</param>
+    internal static void Render(SKCanvas canvas, Page page, RenderContext ctx, int? pageNumber)
     {
         ArgumentNullException.ThrowIfNull(canvas);
         ArgumentNullException.ThrowIfNull(page);
         ArgumentNullException.ThrowIfNull(ctx);
         ctx.ThrowIfDisposed();
+        ctx.ThrowIfRefused();
 
-        foreach (var element in page.Elements)
+        var saveCount = canvas.SaveCount;
+        ctx.StartDrawing(pageNumber);
+        try
         {
-            // WordArt is built once and drawn for its shadow (if it has one), then itself, inside this element's step.
-            using var stretched = element is TextElement { Fit: TextFit.Stretch } t ? TextRenderer.PrepareStretched(t, ctx) : null;
-            if (element.Shadow is { } shadow) DrawShadow(canvas, element, shadow, ctx, stretched);
-            canvas.Save();
-            Rotate(canvas, element);
-            DrawContent(canvas, element, ctx, stretched);
-            canvas.Restore();
+            for (var i = 0; i < page.Elements.Count; i++)
+            {
+                var element = page.Elements[i];
+                ctx.AtElement(i + 1);
+                ctx.Checkpoint();
+                if (element is TextElement text) ctx.CheckText(text, pageNumber, i + 1);   // before it is laid out or built
+                // WordArt is built once and drawn for its shadow (if it has one), then itself, inside this element's step.
+                using var stretched = element is TextElement { Fit: TextFit.Stretch } t ? TextRenderer.PrepareStretched(t, ctx) : null;
+                if (element.Shadow is { } shadow)
+                {
+                    DrawShadow(canvas, element, shadow, ctx, stretched);
+                    ctx.Checkpoint();   // between the shadow and its element
+                }
+                canvas.Save();
+                Rotate(canvas, element);
+                DrawContent(canvas, element, ctx, stretched);
+                canvas.Restore();
+            }
         }
+        catch
+        {
+            // A stop (or any failure) part-way through an element leaves no layer, rotation or offset on the canvas,
+            // which may be the caller's own.
+            canvas.RestoreToCount(saveCount);
+            throw;
+        }
+        finally { ctx.StopDrawing(); }
     }
 
     // Clockwise-positive about the frame centre; Skia is clockwise for y-down.
@@ -62,8 +87,12 @@ public static class PageRenderer
         {
             using var filter = SKColorFilter.CreateBlendMode(new SKColor(c.R, c.G, c.B), SKBlendMode.SrcIn);
             using var layer = new SKPaint { ColorFilter = filter, Color = new SKColor(0, 0, 0, c.A) };   // layer alpha = shadow opacity
-            canvas.SaveLayer(LayerBounds(element, stretched), layer);
-            DrawContent(canvas, element, ctx, stretched);
+            var bounds = LayerBounds(element, stretched);
+            if (ctx.Target == RenderTarget.Pdf) ctx.CheckPdfLayer(canvas.TotalMatrix.MapRect(bounds), canvas.DeviceClipBounds);   // before SkPDF allocates it
+            canvas.SaveLayer(bounds, layer);
+            ctx.InShadowLayer = true;
+            try { DrawContent(canvas, element, ctx, stretched); }
+            finally { ctx.InShadowLayer = false; }
             canvas.Restore();
         }
         canvas.Restore();
@@ -180,6 +209,7 @@ public static class PageRenderer
 
     private static void DrawImage(SKCanvas canvas, ImageElement img, RenderContext ctx)
     {
+        ctx.PicturesDrawn++;
         var dst = Rect(img.Bounds);
         var path = ctx.ResolvePath(img.Source, out var refusal);
         if (path is null)
@@ -190,7 +220,7 @@ public static class PageRenderer
         }
         // Read once per context (only a read failure is tried again); drawn from its decoded copy on a bitmap, from its
         // encoded image anywhere else (so a PDF embeds it at most once per distinct crop and passes a JPEG through).
-        var picture = ctx.Pictures.Get(path);
+        var picture = ctx.Pictures.Get(path, ctx.Limits.MaxPictureFileBytes);
         switch (picture.State)
         {
             case PictureState.Missing:
@@ -201,10 +231,21 @@ public static class PageRenderer
                 ctx.Warn(RenderWarning.ImageUnreadable, picture.ReadFailed ? $"Image '{img.Source}' could not be read." : $"Image '{img.Source}' could not be decoded.");
                 DrawPlaceholder(canvas, dst);
                 return;
+            case PictureState.FileTooLarge:
+                ctx.Warn(RenderWarning.ImageTooLarge, $"Image '{img.Source}' is a file of {picture.FileBytes} bytes, more than the {ctx.Limits.MaxPictureFileBytes} limit; it was not read.");
+                DrawPlaceholder(canvas, dst);
+                return;
             case PictureState.TooLarge:
                 ctx.Warn(RenderWarning.ImageTooLarge, $"Image '{img.Source}' declares {picture.Pixels} pixels, more than the {ctx.Pictures.MaxPixels} limit; it was not decoded.");
                 DrawPlaceholder(canvas, dst);
                 return;
+        }
+        if (ctx.Target == RenderTarget.Pdf && picture.Pixels > ctx.Limits.MaxPdfPicturePixels && !PassesThroughPdf(picture, img, ctx))
+        {
+            // A verdict for this PDF only: the cache keeps the picture, and a bitmap still draws it.
+            ctx.Warn(RenderWarning.ImageTooLarge, $"Image '{img.Source}' has {picture.Pixels} pixels, more than the {ctx.Limits.MaxPdfPicturePixels} allowed for a picture that counts as decoded in a PDF; it is a placeholder in the PDF.");
+            DrawPlaceholder(canvas, dst);
+            return;
         }
         var image = (ctx.Target == RenderTarget.Bitmap ? ctx.Pictures.Decoded(picture) : null) ?? picture.Encoded!;
 
@@ -231,6 +272,14 @@ public static class PageRenderer
             if (oval) canvas.DrawOval(dst, sp); else canvas.DrawRect(dst, sp);
         }
     }
+
+    /// <summary>
+    /// Whether a picture is passed through into a PDF whole (WI-006 AC4): a JPEG in the one passed-through shape,
+    /// top-left, uncropped and drawn outside a shadow's layer, which SkPDF writes as it is. Every other picture counts as
+    /// decoded (SkPDF passes some of them through too).
+    /// </summary>
+    private static bool PassesThroughPdf(PictureCache.Entry picture, ImageElement img, RenderContext ctx) =>
+        picture.JpegShape && picture.Origin == SKEncodedOrigin.TopLeft && (img.Crop is null || img.Crop == new Crop(0, 0, 0, 0)) && !ctx.InShadowLayer;
 
     private static void DrawPlaceholder(SKCanvas canvas, SKRect r)
     {

@@ -32,10 +32,11 @@ public sealed class LimitsTests : IDisposable
     }
 
     [Fact]
-    public void LetterAtMaxDpi_IsWithinTheCap()
+    public void LetterAtMaxDpi_IsOverTheCap_LetterAt2310Dpi_IsWithinIt()
     {
-        var (w, h) = Exporter.PixelSize(new Page(612, 792), Exporter.MaxDpi);
-        Assert.Equal((20400, 26400), (w, h));
+        // WI-006: a Letter page at 2,400 dpi could not be allocated, so MaxPixels is 500 MP: Letter renders up to about 2,310 dpi.
+        Assert.Throws<ArgumentOutOfRangeException>(() => Exporter.PixelSize(new Page(612, 792), Exporter.MaxDpi));
+        Assert.Equal((19635, 25410), Exporter.PixelSize(new Page(612, 792), 2310));
     }
 
     private string Png(string path)

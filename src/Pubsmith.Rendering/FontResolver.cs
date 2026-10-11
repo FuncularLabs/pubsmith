@@ -36,10 +36,21 @@ public sealed class FontResolver
         return null;
     }
 
+    /// <summary>How many times a font was looked up in the system rather than the cache (diagnostics and tests).</summary>
+    internal int Resolutions { get; private set; }
+    /// <summary>
+    /// Keys (name, bold, italic) cached at most; past them a font resolves as before, uncached. The resolver's own limit,
+    /// so a resolver shared between contexts cannot grow past it.
+    /// </summary>
+    internal const int MaxCachedKeys = 4_096;
+
+    internal int CachedKeys => _cache.Count;
+
     public ResolvedFont Resolve(string family, bool bold, bool italic)
     {
         var key = (family.ToUpperInvariant(), bold, italic);
         if (_cache.TryGetValue(key, out var hit)) return hit;
+        Resolutions++;
 
         var slant = italic ? SKFontStyleSlant.Italic : SKFontStyleSlant.Upright;
         var style = new SKFontStyle(bold ? SKFontStyleWeight.Bold : SKFontStyleWeight.Normal, SKFontStyleWidth.Normal, slant);
@@ -49,7 +60,7 @@ public sealed class FontResolver
             : TryStyled(family, bold, slant) is { } styled
                 ? new ResolvedFont(styled, family, IsSubstitute: false)
                 : new ResolvedFont(_manager.MatchFamily(FallbackFamily, style) ?? SKTypeface.Default, family, IsSubstitute: true);
-        _cache[key] = result;
+        if (_cache.Count < MaxCachedKeys) _cache[key] = result;
         return result;
     }
 

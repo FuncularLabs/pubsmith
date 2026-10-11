@@ -9,8 +9,11 @@ public static class Exporter
 {
     public const double MaxDpi = 2400;
 
-    /// <summary>Largest bitmap rendered: a US Letter page at <see cref="MaxDpi"/> (538 megapixels) fits.</summary>
-    public const long MaxPixels = 600_000_000;
+    /// <summary>
+    /// Largest bitmap rendered. One page's bitmap must stay under SkiaSharp's 2 GiB allocation: a US Letter page at
+    /// <see cref="MaxDpi"/> (538.6 megapixels) failed to allocate, so Letter renders up to about 2,310 dpi.
+    /// </summary>
+    public const long MaxPixels = 500_000_000;
 
     /// <summary>The bitmap size a page renders to at <paramref name="dpi"/>; throws when it is impossible or over <see cref="MaxPixels"/>.</summary>
     public static (int Width, int Height) PixelSize(Page page, double dpi)
@@ -36,7 +39,9 @@ public static class Exporter
     {
         ArgumentNullException.ThrowIfNull(ctx);
         ctx.ThrowIfDisposed();
+        ctx.ThrowIfRefused();
         var (w, h) = PixelSize(page, dpi);
+        ctx.CountBitmapPage((long)w * h);   // before the bitmap is allocated
         var bmp = new SKBitmap(new SKImageInfo(w, h, SKColorType.Rgba8888, SKAlphaType.Premul));
         var previous = ctx.Target;
         try
@@ -63,32 +68,54 @@ public static class Exporter
         ctx.ThrowIfDisposed();
         using var bmp = RenderBitmap(page, dpi, ctx);
         using var data = bmp.Encode(SKEncodedImageFormat.Png, 100);
+        ctx.CountPngBytes(data.Size);   // before it is written
         data.SaveTo(output);
     }
 
-    /// <summary>Writes every page as a vector PDF page whose MediaBox is the page size in points; fonts are embedded.</summary>
+    /// <summary>
+    /// Writes every page as a vector PDF page whose MediaBox is the page size in points; fonts are embedded. The PDF is
+    /// counted as it is written (the output need not seek) and refused past <see cref="RenderLimits.MaxPdfBytes"/>;
+    /// on any exception the document is aborted, never closed, so the output holds no trailer and nothing written after.
+    /// </summary>
     public static void ToPdf(PubsmithDocument document, RenderContext ctx, Stream output)
     {
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(output);
         ArgumentNullException.ThrowIfNull(ctx);
         ctx.ThrowIfDisposed();   // before anything is written to the caller's stream
+        ctx.ThrowIfRefused();
         if (document.Pages.Count == 0) throw new ArgumentException("The document has no pages.", nameof(document));
         foreach (var page in document.Pages) CheckPageSize(page);
+        ctx.CountPdf(document);   // pages and typefaces, before anything is written
 
         var previous = ctx.Target;
+        var counted = new CountingStream(output);
+        SKDocument? pdf = null;
         try
         {
             ctx.Target = RenderTarget.Pdf;
-            using var pdf = SKDocument.CreatePdf(output);
-            foreach (var page in document.Pages)
+            ctx.PdfOutput = counted;
+            pdf = SKDocument.CreatePdf(counted);
+            for (var p = 0; p < document.Pages.Count; p++)
             {
+                var page = document.Pages[p];
                 var canvas = pdf.BeginPage((float)page.Width, (float)page.Height);
-                PageRenderer.Render(canvas, page, ctx);
+                PageRenderer.Render(canvas, page, ctx, p + 1);
                 pdf.EndPage();
+                ctx.CheckPdfBytes(p + 1);   // after the page's end; after the last, before the close
             }
             pdf.Close();
         }
-        finally { ctx.Target = previous; }
+        catch
+        {
+            pdf?.Abort();   // never closed: no fonts, no trailer
+            throw;
+        }
+        finally
+        {
+            pdf?.Dispose();
+            ctx.PdfOutput = null;
+            ctx.Target = previous;
+        }
     }
 }

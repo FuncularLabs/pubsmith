@@ -58,6 +58,22 @@ public sealed class CliTests : IDisposable
     }
 
     [Fact]
+    public void MultiPagePng_NamesItsPagesFromTheNameWindowsWrites()
+    {
+        // Windows drops a trailing dot from a file's name, so one page given as "sheet.png." is written as "sheet.png".
+        // Pages are named from that name too (WI-006 rev 23: the path is expanded once, before "-pN" is added), as the
+        // usage's "<name>-p1.png" says; before, they were "sheet.png-p1", with no extension.
+        if (!OperatingSystem.IsWindows()) return;   // other systems keep the dot
+        var doc = WriteDoc(new PubsmithDocument { Pages = [new Page(72, 72), new Page(72, 72)] });
+
+        Assert.Equal(0, Run("render", doc, "--png", Path.Combine(_dir, "sheet.png.")));
+
+        Assert.True(File.Exists(Path.Combine(_dir, "sheet-p1.png")));
+        Assert.True(File.Exists(Path.Combine(_dir, "sheet-p2.png")));
+        Assert.False(File.Exists(Path.Combine(_dir, "sheet.png-p1")));
+    }
+
+    [Fact]
     public void RelativeImagePaths_ResolveAgainstDocumentFolder()
     {
         Directory.CreateDirectory(Path.Combine(_dir, "art"));

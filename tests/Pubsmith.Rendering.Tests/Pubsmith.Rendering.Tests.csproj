@@ -25,6 +25,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Pubsmith.Rendering\Pubsmith.Rendering.csproj" />
     <ProjectReference Include="..\..\src\Pubsmith.Core\Pubsmith.Core.csproj" />
+    <ProjectReference Include="..\..\src\Pubsmith.PubReader\Pubsmith.PubReader.csproj" />
   </ItemGroup>
 
 </Project>

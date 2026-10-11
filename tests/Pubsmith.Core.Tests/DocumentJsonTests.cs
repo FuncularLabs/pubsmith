@@ -387,6 +387,63 @@ public class DocumentJsonTests
     }
 
     [Fact]
+    public void Load_PastItsLimit_IsRefused()
+    {
+        // WI-006 AC4: a document is read through a limit; at the limit it loads, one byte under it is refused by name.
+        Assert.Equal(256L << 20, DocumentJson.MaxLoadBytes);
+        var path = Path.Combine(Path.GetTempPath(), $"pubsmith-{Guid.NewGuid():N}.json");
+        try
+        {
+            var doc = SampleWithEveryElementKind();
+            DocumentJson.Save(doc, path);
+            var size = new FileInfo(path).Length;
+            Assert.Equal(DocumentJson.Serialize(doc), DocumentJson.Serialize(DocumentJson.Load(path, size)));
+            var ex = Assert.Throws<DocumentFormatException>(() => DocumentJson.Load(path, size - 1));
+            Assert.Contains(path, ex.Message);
+            Assert.Contains($"more than {size - 1} bytes", ex.Message);
+        }
+        finally { File.Delete(path); }
+    }
+
+    [Fact]
+    public void Load_ByDefault_RefusesAFileOverMaxLoadBytes_WithoutReadingIt()
+    {
+        // A file one byte over 256 MiB (its length set, never written): refused by its size, before any of it is read.
+        var path = Path.Combine(Path.GetTempPath(), $"pubsmith-{Guid.NewGuid():N}.json");
+        try
+        {
+            using (var f = File.Create(path)) f.SetLength(DocumentJson.MaxLoadBytes + 1);
+            var ex = Assert.Throws<DocumentFormatException>(() => DocumentJson.Load(path));
+            Assert.Contains($"more than {DocumentJson.MaxLoadBytes} bytes", ex.Message);
+        }
+        finally { File.Delete(path); }
+    }
+
+    [Fact]
+    public void Load_PastItsLimit_StopsReading()
+    {
+        // The limit is checked while reading: a 16 MiB stream refused at 1 KiB is not read to its end.
+        var stream = new CountingStream(new MemoryStream(new byte[16 << 20]));
+        Assert.Throws<DocumentFormatException>(() => DocumentJson.Load(stream, "big.json", 1024));
+        Assert.InRange(stream.BytesRead, 1025, 1 << 20);
+    }
+
+    private sealed class CountingStream(Stream inner) : Stream
+    {
+        public long BytesRead { get; private set; }
+        public override bool CanRead => true;
+        public override bool CanSeek => false;
+        public override bool CanWrite => false;
+        public override long Length => throw new NotSupportedException();
+        public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
+        public override int Read(byte[] buffer, int offset, int count) { var n = inner.Read(buffer, offset, count); BytesRead += n; return n; }
+        public override void Flush() { }
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+    }
+
+    [Fact]
     public void Load_MissingFile_ThrowsDocumentFormatExceptionNamingPath()
     {
         var path = Path.Combine(Path.GetTempPath(), $"pubsmith-missing-{Guid.NewGuid():N}.json");

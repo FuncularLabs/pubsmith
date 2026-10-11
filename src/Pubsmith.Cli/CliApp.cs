@@ -5,6 +5,20 @@ using Pubsmith.Rendering;
 
 namespace Pubsmith.Cli;
 
+/// <summary>The file moves and deletes of the CLI's commit (a seam for its tests).</summary>
+internal interface ICliFiles
+{
+    void Move(string from, string to);
+    void Delete(string path);
+}
+
+internal sealed class SystemFiles : ICliFiles
+{
+    public static SystemFiles Instance { get; } = new();
+    public void Move(string from, string to) => File.Move(from, to);
+    public void Delete(string path) => File.Delete(path);
+}
+
 /// <summary>
 /// pubsmith render &lt;doc.json | file.pub&gt; [--pdf &lt;path&gt;] [--png &lt;path&gt;] [--dpi &lt;n&gt;]
 /// pubsmith import &lt;file.pub&gt; [--out &lt;dir&gt;]
@@ -23,14 +37,18 @@ public static class CliApp
         "  import: writes <name>.json, its pictures and <name>.import.json (what was approximated or left out)\n" +
         "          into --out (default: a folder <name>-pubsmith beside the .pub; importing again updates it)";
 
-    public static int Run(string[] args, TextWriter stdout, TextWriter stderr)
+    public static int Run(string[] args, TextWriter stdout, TextWriter stderr) =>
+        Run(args, stdout, stderr, RenderLimits.Default, TimeProvider.System, DocumentJson.MaxLoadBytes, SystemFiles.Instance);
+
+    /// <summary>The CLI with its limits, clock, load limit and file operations given (for its tests).</summary>
+    internal static int Run(string[] args, TextWriter stdout, TextWriter stderr, RenderLimits limits, TimeProvider time, long maxLoadBytes, ICliFiles files)
     {
         if (args.Length < 2) return UsageError(stderr, null);
         try
         {
             return args[0] switch
             {
-                "render" => Render(args, stdout, stderr),
+                "render" => Render(args, stdout, stderr, limits, time, maxLoadBytes, files),
                 "import" => Import(args, stdout, stderr),
                 _ => UsageError(stderr, null),
             };
@@ -43,7 +61,7 @@ public static class CliApp
         }
     }
 
-    private static int Render(string[] args, TextWriter stdout, TextWriter stderr)
+    private static int Render(string[] args, TextWriter stdout, TextWriter stderr, RenderLimits limits, TimeProvider time, long maxLoadBytes, ICliFiles files)
     {
         var input = args[1];
         string? pdf = null, png = null;
@@ -81,26 +99,39 @@ public static class CliApp
             }
             else
             {
-                try { doc = DocumentJson.Load(input); }
+                try { doc = DocumentJson.Load(input, maxLoadBytes); }
                 catch (DocumentFormatException ex) { stderr.WriteLine($"error: {ex.Message}"); return Failed; }
                 baseDirectory = Path.GetDirectoryName(Path.GetFullPath(input))!;
             }
             if (doc.Pages.Count == 0) { stderr.WriteLine("error: the document has no pages."); return Failed; }
 
-            using var ctx = new RenderContext(baseDirectory);   // owns the pictures it opens
+            using var ctx = new RenderContext(baseDirectory, limits, time);   // owns the pictures it opens
             try
             {
-                if (pdf is not null)
-                    WriteAtomically(pdf, s => Exporter.ToPdf(doc, ctx, s), stdout);
+                // The whole command, before anything is written, and before the outputs are planned: planning grows with
+                // the pages, and the count bounds them.
+                RenderLimits.Check(doc, new RenderOutputs(pdf is not null, png is not null ? dpi : null), ctx);
+
+                // Every output, by its full path, checked against the others and its folder before anything is written.
+                var outputs = new List<(string Path, Action<Stream, RenderContext> Write)>();
+                if (pdf is not null) outputs.Add((Path.GetFullPath(pdf), (s, c) => Exporter.ToPdf(doc, c, s)));
                 if (png is not null)
                 {
+                    // Expanded once: a folder given in 8.3 short form costs a file-system lookup at each expansion.
+                    var fullPng = Path.GetFullPath(png);
                     for (var p = 0; p < doc.Pages.Count; p++)
                     {
-                        var target = doc.Pages.Count == 1 ? png : PagePath(png, p + 1);
                         var page = doc.Pages[p];
-                        WriteAtomically(target, s => Exporter.ToPng(page, dpi, ctx, s), stdout);
+                        outputs.Add((Path.GetFullPath(doc.Pages.Count == 1 ? fullPng : PagePath(fullPng, p + 1)), (s, c) => Exporter.ToPng(page, dpi, c, s)));
                     }
                 }
+                var samePath = outputs.GroupBy(o => o.Path, OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal).FirstOrDefault(g => g.Count() > 1);
+                if (samePath is not null) return UsageError(stderr, $"two outputs have the same path: {samePath.Key}");
+                foreach (var folder in outputs.Select(o => Path.GetDirectoryName(o.Path)!).Distinct())
+                    if (!Directory.Exists(folder)) throw new DirectoryNotFoundException($"The output folder '{folder}' does not exist.");
+
+                var staged = Stage(outputs, ctx, files, stderr);
+                Commit(staged, files, stdout, stderr);
             }
             finally
             {
@@ -173,23 +204,95 @@ public static class CliApp
     private static string PagePath(string path, int page) =>
         Path.Combine(Path.GetDirectoryName(path) ?? "", $"{Path.GetFileNameWithoutExtension(path)}-p{page}{Path.GetExtension(path)}");
 
-    /// <summary>Writes to a uniquely named temporary sibling and renames, so a failed render never leaves a truncated file behind.</summary>
-    private static void WriteAtomically(string path, Action<Stream> write, TextWriter stdout)
+    /// <summary>
+    /// Writes every output to a uniquely named temporary sibling (<c>&lt;output&gt;.&lt;guid&gt;.tmp</c>). If any of them fails,
+    /// the temporaries written so far are deleted and nothing else is touched.
+    /// </summary>
+    private static List<(string Path, string Temp)> Stage(List<(string Path, Action<Stream, RenderContext> Write)> outputs, RenderContext ctx, ICliFiles files, TextWriter stderr)
     {
-        var full = Path.GetFullPath(path);
-        var folder = Path.GetDirectoryName(full)!;
-        if (!Directory.Exists(folder)) throw new DirectoryNotFoundException($"The output folder '{folder}' does not exist.");
-        var temp = $"{full}.{Guid.NewGuid():N}.tmp";
+        var staged = new List<(string Path, string Temp)>();
         try
         {
-            using (var fs = File.Create(temp)) write(fs);
-            File.Move(temp, full, overwrite: true);
+            foreach (var (path, write) in outputs)
+            {
+                var temp = $"{path}.{Guid.NewGuid():N}.tmp";
+                staged.Add((path, temp));
+                using var file = new FileStream(temp, FileMode.CreateNew, FileAccess.Write);
+                write(file, ctx);
+            }
+            return staged;
         }
-        finally
+        catch
         {
-            if (File.Exists(temp)) File.Delete(temp);
+            foreach (var (_, temp) in staged) DeleteOrWarn(temp, "temporary file", files, stderr);
+            throw;
         }
-        stdout.WriteLine($"wrote {full}");
+    }
+
+    /// <summary>
+    /// Moves the staged outputs into place: each existing output first to a uniquely named backup
+    /// (<c>&lt;output&gt;.&lt;guid&gt;.backup</c>), then its temporary into place. If a move fails, the moves are undone in
+    /// reverse order (what was moved in is deleted, each output put back from its backup); a backup that cannot be put
+    /// back is kept and named, and so is a new output that cannot be removed. When every move succeeded, the backups are
+    /// deleted.
+    /// </summary>
+    private static void Commit(List<(string Path, string Temp)> staged, ICliFiles files, TextWriter stdout, TextWriter stderr)
+    {
+        var done = new List<(string Path, string? Backup, bool MovedIn)>();
+        try
+        {
+            foreach (var (path, temp) in staged)
+            {
+                string? backup = null;
+                if (File.Exists(path))
+                {
+                    backup = $"{path}.{Guid.NewGuid():N}.backup";
+                    files.Move(path, backup);
+                }
+                done.Add((path, backup, false));
+                files.Move(temp, path);
+                done[^1] = (path, backup, true);
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            var kept = new List<string>();      // backups that could not be put back
+            var leftNew = new List<string>();   // new outputs moved into place that could not be removed
+            for (var k = done.Count - 1; k >= 0; k--)
+            {
+                var (path, backup, movedIn) = done[k];
+                if (movedIn)
+                {
+                    try { files.Delete(path); }
+                    catch (Exception undo) when (undo is IOException or UnauthorizedAccessException)
+                    {
+                        leftNew.Add(path);
+                        if (backup is not null) kept.Add(backup);   // the earlier output cannot be put back over it
+                        continue;
+                    }
+                }
+                if (backup is null) continue;
+                try { files.Move(backup, path); }
+                catch (Exception undo) when (undo is IOException or UnauthorizedAccessException) { kept.Add(backup); }
+            }
+            foreach (var (_, temp) in staged)
+                if (File.Exists(temp)) DeleteOrWarn(temp, "temporary file", files, stderr);
+            var left = new List<string>();
+            if (leftNew.Count > 0) left.Add($"these new outputs could not be removed: {string.Join(", ", leftNew)}");
+            if (kept.Count > 0) left.Add($"these backups could not be put back and were kept: {string.Join(", ", kept)}");
+            throw new IOException(left.Count == 0
+                ? $"{ex.Message}; nothing was replaced: every earlier output was put back."
+                : $"{ex.Message}; the replacement was undone except: {string.Join("; ", left)}.", ex);
+        }
+        foreach (var (_, backup, _) in done)
+            if (backup is not null) DeleteOrWarn(backup, "backup", files, stderr);
+        foreach (var (path, _) in staged) stdout.WriteLine($"wrote {path}");
+    }
+
+    private static void DeleteOrWarn(string path, string what, ICliFiles files, TextWriter stderr)
+    {
+        try { files.Delete(path); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { stderr.WriteLine($"warning: could not delete the {what} {path}: {ex.Message}"); }
     }
 
     private static int UsageError(TextWriter stderr, string? detail)

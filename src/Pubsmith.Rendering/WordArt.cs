@@ -17,18 +17,20 @@ internal static class WordArt
     /// The glyphs' final outlines, warped, scaled and placed in the target frame, ready to paint. Built once per
     /// element, so the shadow and the element are drawn from the same paths. The caller disposes them.
     /// </summary>
-    public static List<(SKPath Path, SKColor Color)> Place(IReadOnlyList<Glyph> glyphs, SKRect target, TextWarp? warp)
+    public static List<(SKPath Path, SKColor Color)> Place(IReadOnlyList<Glyph> glyphs, SKRect target, TextWarp? warp, RenderContext ctx)
     {
         var kind = warp?.Kind ?? WarpKind.None;
         return kind is WarpKind.ArchUp or WarpKind.ArchDown or WarpKind.Circle or WarpKind.Button
-            ? OnPath(glyphs, target, kind)
-            : Envelope(glyphs, target, kind, warp?.Adjust);
+            ? OnPath(glyphs, target, kind, ctx)
+            : Envelope(glyphs, target, kind, warp?.Adjust, ctx);
     }
 
-    public static void Paint(SKCanvas canvas, IEnumerable<(SKPath Path, SKColor Color)> placed, SKPaint? outline)
+    public static void Paint(SKCanvas canvas, IEnumerable<(SKPath Path, SKColor Color)> placed, SKPaint? outline, RenderContext ctx)
     {
         foreach (var (path, color) in placed)
         {
+            ctx.Checkpoint();
+            ctx.WordArtGlyphsPainted++;
             using var fill = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Fill, Color = color };
             canvas.DrawPath(path, fill);
             if (outline is not null) canvas.DrawPath(path, outline);
@@ -37,7 +39,7 @@ internal static class WordArt
 
     // ---------- envelopes ----------
 
-    private static List<(SKPath, SKColor)> Envelope(IReadOnlyList<Glyph> glyphs, SKRect t, WarpKind kind, double? adjust)
+    private static List<(SKPath, SKColor)> Envelope(IReadOnlyList<Glyph> glyphs, SKRect t, WarpKind kind, double? adjust, RenderContext ctx)
     {
         var bounds = SKRect.Empty;
         var x = 0f;
@@ -47,6 +49,8 @@ internal static class WordArt
         {
             foreach (var g in glyphs)
             {
+                ctx.Checkpoint();
+                ctx.WordArtGlyphsLaid++;
                 var p = new SKPath(g.Path);
                 p.Transform(SKMatrix.CreateTranslation(x, 0));
                 if (!p.IsEmpty) bounds.Union(p.TightBounds);
@@ -62,7 +66,12 @@ internal static class WordArt
                 var tu = top(u); var bu = bottom(u);
                 return new SKPoint(t.Left + u * t.Width, t.Top + (float)(tu + v * (bu - tu)) * t.Height);
             }
-            foreach (var (p, color) in laid) result.Add((kind == WarpKind.None ? Linear(p, Map) : Bend(p, Map), color));
+            foreach (var (p, color) in laid)
+            {
+                ctx.Checkpoint();
+                ctx.WordArtGlyphsPlaced++;
+                result.Add((kind == WarpKind.None ? Linear(p, Map) : Bend(p, Map), color));
+            }
             return result;
         }
         catch
@@ -171,7 +180,7 @@ internal static class WordArt
 
     // ---------- glyphs along an ellipse ----------
 
-    private static List<(SKPath, SKColor)> OnPath(IReadOnlyList<Glyph> glyphs, SKRect t, WarpKind kind)
+    private static List<(SKPath, SKColor)> OnPath(IReadOnlyList<Glyph> glyphs, SKRect t, WarpKind kind, RenderContext ctx)
     {
         var result = new List<(SKPath, SKColor)>();
         var advance = glyphs.Sum(g => g.Advance);
@@ -180,12 +189,15 @@ internal static class WordArt
         // As Publisher draws them: the baseline runs on the ellipse inscribed in the frame (glyphs point outward,
         // or inward for arch-down), and the text is scaled so its advance fills the path length.
         using var path = Arc(t, kind);
-        using (var measure = new SKPathMeasure(path))
+        using var measure = new SKPathMeasure(path);
+        try
         {
             var scale = measure.Length / advance;
             var x = 0f;
             foreach (var g in glyphs)
             {
+                ctx.Checkpoint();
+                ctx.WordArtGlyphsPlaced++;
                 var mid = (x + g.Advance / 2) * scale;
                 x += g.Advance;
                 if (g.Path.IsEmpty || !measure.GetPositionAndTangent(Math.Min(mid, measure.Length), out var pos, out var tan)) continue;
@@ -198,8 +210,13 @@ internal static class WordArt
                 p.Transform(m);
                 result.Add((p, g.Color));
             }
+            return result;
         }
-        return result;
+        catch
+        {
+            foreach (var (p, _) in result) p.Dispose();
+            throw;
+        }
     }
 
     /// <summary>Arch up / button: upper half, left to right. Arch down: lower half, left to right. Circle: from the left, clockwise.</summary>

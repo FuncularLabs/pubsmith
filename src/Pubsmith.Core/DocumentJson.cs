@@ -56,16 +56,52 @@ public static class DocumentJson
         catch (NotSupportedException ex) { throw new DocumentFormatException($"The document is invalid: {ex.Message}", ex); }
     }
 
-    public static PubsmithDocument Load(string path)
+    /// <summary>Largest document <see cref="Load(string)"/> reads: 256 MiB of JSON, the most an import writes.</summary>
+    public const long MaxLoadBytes = 256L << 20;
+
+    public static PubsmithDocument Load(string path) => Load(path, MaxLoadBytes);
+
+    /// <summary>Loads a document, reading at most <paramref name="maxBytes"/> of it: a larger file is refused by name.</summary>
+    public static PubsmithDocument Load(string path, long maxBytes)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(maxBytes);
+        Stream file;
+        try { file = File.OpenRead(path); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            throw new DocumentFormatException($"Cannot read document '{path}': {ex.Message}", ex);
+        }
+        // A file already larger is refused unread; one that grows, or has no length, is stopped while it is read.
+        if (file.CanSeek && file.Length > maxBytes)
+        {
+            file.Dispose();
+            throw TooLarge(path, maxBytes);
+        }
+        return Load(file, path, maxBytes);
+    }
+
+    /// <summary>Loads a document from <paramref name="stream"/> (disposed), named <paramref name="path"/> in messages.</summary>
+    internal static PubsmithDocument Load(Stream stream, string path, long maxBytes)
     {
         string json;
-        try { json = File.ReadAllText(path); }
+        try
+        {
+            using var reader = new StreamReader(new ReadLimitStream(stream, maxBytes));
+            json = reader.ReadToEnd();
+        }
+        catch (ReadLimitStream.LimitPassed)
+        {
+            throw TooLarge(path, maxBytes);
+        }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             throw new DocumentFormatException($"Cannot read document '{path}': {ex.Message}", ex);
         }
         return Deserialize(json);
     }
+
+    private static DocumentFormatException TooLarge(string path, long maxBytes) =>
+        new($"Document '{path}' is more than {maxBytes} bytes, so it was not loaded.");
 
     public static void Save(PubsmithDocument document, string path) => Save(document, path, long.MaxValue);
 
@@ -127,6 +163,41 @@ public sealed class StagedDocument : IDisposable
     {
         if (!_done && File.Exists(_temp)) File.Delete(_temp);
         _done = true;
+    }
+}
+
+/// <summary>Reads through to <paramref name="inner"/> and throws <see cref="LimitPassed"/> once more than <paramref name="limit"/> bytes are read.</summary>
+internal sealed class ReadLimitStream(Stream inner, long limit) : Stream
+{
+    internal sealed class LimitPassed : Exception;
+
+    private long read;
+
+    public override bool CanRead => true;
+    public override bool CanSeek => false;
+    public override bool CanWrite => false;
+    public override long Length => throw new NotSupportedException();
+    public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
+
+    public override int Read(byte[] buffer, int offset, int count) => Read(buffer.AsSpan(offset, count));
+
+    public override int Read(Span<byte> buffer)
+    {
+        var n = inner.Read(buffer);
+        read += n;
+        if (read > limit) throw new LimitPassed();
+        return n;
+    }
+
+    public override void Flush() { }
+    public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+    public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+    public override void SetLength(long value) => throw new NotSupportedException();
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing) inner.Dispose();
+        base.Dispose(disposing);
     }
 }
 

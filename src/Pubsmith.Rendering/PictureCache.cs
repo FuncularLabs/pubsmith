@@ -3,7 +3,7 @@ using SkiaSharp;
 namespace Pubsmith.Rendering;
 
 /// <summary>What opening a picture found.</summary>
-internal enum PictureState { Missing, Unreadable, TooLarge, Ok }
+internal enum PictureState { Missing, Unreadable, TooLarge, FileTooLarge, Ok }
 
 /// <summary>
 /// The pictures one <see cref="RenderContext"/> has opened, by resolved full path. Each file is read at its first lookup,
@@ -22,12 +22,18 @@ internal sealed class PictureCache(long maxPixels, long budget) : IDisposable
         public required PictureState State { get; init; }
         /// <summary>Declared pixels (64-bit: a declared size can overflow an int).</summary>
         public long Pixels { get; init; }
+        /// <summary>The file's size, when it was too large to read.</summary>
+        public long FileBytes { get; init; }
         public SKImage? Encoded { get; init; }
         public SKImage? Decoded { get; set; }
         public bool DecodeFailed { get; set; }
         /// <summary>The file could not be read (an I/O error): not remembered, so the next lookup tries again.</summary>
         public bool ReadFailed { get; init; }
         public LinkedListNode<Entry>? Node { get; set; }
+        /// <summary>A JPEG in the one shape a PDF passes through (<see cref="JpegWalk"/>), whatever its placement.</summary>
+        public bool JpegShape { get; init; }
+        /// <summary>The EXIF origin; a PDF passes a JPEG through only when it is top-left.</summary>
+        public SKEncodedOrigin Origin { get; init; } = SKEncodedOrigin.TopLeft;
     }
 
     // Paths compare as RenderContext.ResolvePath compares them: ignoring case on Windows only.
@@ -40,37 +46,54 @@ internal sealed class PictureCache(long maxPixels, long budget) : IDisposable
     public int Reads { get; private set; }
     /// <summary>Decoded copies made.</summary>
     public int Decodes { get; private set; }
+    /// <summary>Bytes read from picture files.</summary>
+    public long BytesRead { get; private set; }
     public long DecodedPixels { get; private set; }
     public long PeakDecodedPixels { get; private set; }
     public bool IsDisposed { get; private set; }
 
-    public Entry Get(string fullPath)
+    /// <summary>The picture at <paramref name="fullPath"/>, within the default picture file size.</summary>
+    public Entry Get(string fullPath) => Get(fullPath, RenderLimits.Default.MaxPictureFileBytes);
+
+    /// <param name="maxFileBytes">A file larger than this is not read (<see cref="PictureState.FileTooLarge"/>).</param>
+    public Entry Get(string fullPath, long maxFileBytes)
     {
         ObjectDisposedException.ThrowIf(IsDisposed, this);
         if (_entries.TryGetValue(fullPath, out var entry)) return entry;
         Reads++;
-        entry = Open(fullPath);
+        entry = Open(fullPath, maxFileBytes);
         if (!entry.ReadFailed) _entries[fullPath] = entry;
         return entry;
     }
 
-    private Entry Open(string path)
+    private Entry Open(string path, long maxFileBytes)
     {
         if (!File.Exists(path)) return new Entry { State = PictureState.Missing };
         byte[] bytes;
-        try { bytes = File.ReadAllBytes(path); }
+        try
+        {
+            using var file = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+            if (file.Length > maxFileBytes) return new Entry { State = PictureState.FileTooLarge, FileBytes = file.Length };   // before it is read
+            bytes = new byte[file.Length];
+            file.ReadExactly(bytes);
+            BytesRead += bytes.Length;
+        }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return new Entry { State = PictureState.Unreadable, ReadFailed = true }; }
         using var data = SKData.CreateCopy(bytes);
+        bool jpegShape;
+        SKEncodedOrigin origin;
         using (var codec = SKCodec.Create(data))
         {
             if (codec is null) return new Entry { State = PictureState.Unreadable };
             var declared = (long)codec.Info.Width * codec.Info.Height;
             if (declared > maxPixels) return new Entry { State = PictureState.TooLarge, Pixels = declared };
+            jpegShape = codec.EncodedFormat == SKEncodedImageFormat.Jpeg && JpegWalk.IsPassedThroughShape(bytes);
+            origin = codec.EncodedOrigin;
         }
         var image = SKImage.FromEncodedData(data);
         return image is null
             ? new Entry { State = PictureState.Unreadable }
-            : new Entry { State = PictureState.Ok, Encoded = image, Pixels = (long)image.Width * image.Height };
+            : new Entry { State = PictureState.Ok, Encoded = image, Pixels = (long)image.Width * image.Height, JpegShape = jpegShape, Origin = origin };
     }
 
     /// <summary>

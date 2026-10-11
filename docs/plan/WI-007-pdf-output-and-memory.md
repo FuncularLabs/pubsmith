@@ -10,6 +10,13 @@ WI-006's Task 0 reviews (rounds 1 to 6), so none of it is lost.
 
 ## Requirements carried from WI-006
 
+- **A PDF's close** (WI-006 implementation review R1, rev 14): the close writes each typeface's subset, and its time
+  grows faster than the distinct glyphs drawn from the typeface, which nothing counts (bytes stay within about 12 MiB
+  a typeface). Measured: one typeface of 2,000 distinct ideographs closed in 0.8 s, of 10,000 in 58.5 s (as long as
+  their drawing), of 20,000 in 22.6 s and 142.9 s (two runs); Segoe UI Emoji with 1,500 code points was written as 9
+  Type3 font objects (8.5 MiB). Bounded today only through `MaxDrawTime`. A count of distinct glyphs per PDF
+  typeface, checked before the close (or before drawing, as `MaxPdfTypefaces` is), would bound it.
+
 - **A PDF page's end** (WI-006 Task 0 round 3 S3, round 4 U1 and U2, round 5 V1 to V3, V5 to V7; moved here by the
   owner after three rounds): SkPDF holds a page's whole content stream until `EndPage`, then compresses it and writes
   it at once. Measured, per second of drawing: up to about 230 MB of memory, 57 MB written and an end of 4.6 times
