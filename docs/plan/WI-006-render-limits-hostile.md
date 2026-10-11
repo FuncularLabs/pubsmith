@@ -114,6 +114,9 @@ memory (Measurements).
   made: PNG pages are named from the output path once made full, so on Windows `sheet.png.` gives `sheet-p1.png`, where
   it gave `sheet.png-p1`. AC6's worst case adds a `.pub`'s import before the check and the planning's time, and gives
   round 9's PDF timings as measured; rev 22's note is made exact (table at the end).
+- **Rev 24:** the verification of rev 23 (round 11: CLEAN, with one Nit) answered. AC6's worst case said a `.pub` is
+  imported before loading; its import replaces loading, and its write includes the import's report, which only its
+  issue count bounds (table at the end).
 
 ## Measurements (2026-10-01, before this work)
 
@@ -425,11 +428,12 @@ working set did not grow. The PDF page's end, recorded for WI-007: pages of Word
 1.57 s outside drawing (page ends) per second of drawing.
 
 **A command's worst case (AC6)**, from these measurements:
-- loading: at most `MaxLoadBytes` (256 MiB; Task 0 measured a 256 MiB load peaking at 2.3 GB); for a `.pub`, before
-  that, its import within the import's own limits (`PubImporter.MaxElements` units placed, one at least for each page;
-  `PubImporter.MaxTextPlaced` characters placed; `PubPackage.MaxStreamBytes` for each stream read) and the import's write
-  to a temporary folder (at most `PubImporter.MaxJsonBytes`, 256 MiB, of JSON, and its pictures), all before the counted
-  check (rev 23);
+- loading: at most `MaxLoadBytes` (256 MiB; Task 0 measured a 256 MiB load peaking at 2.3 GB); for a `.pub`, in place
+  of loading, its import within the import's own limits (`PubImporter.MaxElements` units placed, one at least for each
+  page; `PubImporter.MaxTextPlaced` characters placed; `PubPackage.MaxStreamBytes` for each stream read) and the
+  import's write to a temporary folder: the document's JSON (at most `PubImporter.MaxJsonBytes`, 256 MiB), its
+  pictures, and its report (one entry per issue, each issue costing a `MaxElements` unit), all before the counted check
+  (rev 23; rev 24: in place of loading, and the report);
 - the counted check: at most 16,384 font resolutions, and a walk over every paragraph and run of the document for its
   font names, bounded by the load limit (the round 8 review measured 3.1 s for a 268 MB document of 89 million empty
   paragraphs, in Release, after 23 s of loading); a PDF command's check also walks the document for its typefaces, and
@@ -815,6 +819,12 @@ records it):
 | R10-F2 | Fix-introduced: PNG pages are named from the output path once made full, so some names changed (a trailing dot, a trailing space after a name with no extension, an 8.3 short name), though AC9 said nothing else changes | TEST-GAP | The new names kept and named in AC9 (with a path ending in `.` or `..`, found since); `CliTests.MultiPagePng_NamesItsPagesFromTheNameWindowsWrites`; `V10-M3`, a survivor until now, killed |
 | R10-F3 | Three of rev 22's sentences were inexact: round 9's 4.1 s is a PDF command's whole check, not its typeface walk; "rev 21's own work held"; "the last '34 ms against 5 ms' corrected" (round 7's row keeps it, as history) | PLAN-GAP | AC6 gives round 9's PDF timings as measured; rev 22's note reworded |
 | R10-F4 | AC6's worst case left out a `.pub`'s import and its write before the check, and gave the planning no time (a `~` in the full output path costs a file-system lookup a page) | PLAN-GAP | Both added to AC6's worst case, with the review's measurements |
+
+## Fix verification, round 11 (rev 24): how each finding is answered
+
+| # | Finding (short) | Blame | Rev 24 |
+|---|---|---|---|
+| R11-F1 | AC6's `.pub` sentence said the import comes before loading (a `.pub` command loads no JSON: it renders the import's own document) and left out the import's report, whose size only its issue count bounds | PLAN-GAP | "In place of loading"; the report named: one entry per issue, each issue costing a `MaxElements` unit |
 
 ## Not in scope
 
