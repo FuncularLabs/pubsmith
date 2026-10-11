@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Pubsmith.PubReader.Tests" />
+    <InternalsVisibleTo Include="Pubsmith.Rendering.Tests" />
   </ItemGroup>
 
 </Project>

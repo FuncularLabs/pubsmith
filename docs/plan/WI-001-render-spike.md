@@ -65,12 +65,17 @@ Test names corrected on 2026-09-30 to the tests as written (the first draft used
 | `Rgba.Parse / ToString` | `Color_SerializesAsHex_...` |
 | `PageRenderer.Render(SKCanvas, Page, RenderContext)` | FidelityTests, GeometryTests, FontAndWarningTests |
 | `Exporter.ToPng(Page, dpi, ctx, stream)` / `RenderBitmap` / `PixelSize` | ExportTests, FidelityTests, LimitsTests |
-| `Exporter.ToPdf(PubsmithDocument, ctx, stream)` | ExportTests, LimitsTests, CliTests |
+| `Exporter.ToPdf(PubsmithDocument, ctx, stream)` | ExportTests, LimitsTests, CliTests, PdfLimitTests (WI-006) |
 | `FontResolver.Resolve(family, bold, italic)` / `SplitStyle` | FontAndWarningTests |
 | `ImageComparer.Score(SKBitmap, SKBitmap)` / `Score(path, path)` | ImageComparerTests, Fidelity |
 | `RenderContext.Warnings` / `BaseDirectory` | FontAndWarningTests, LimitsTests, CliTests |
 | `RenderContext.Dispose` / `MaxPicturePixels` / `PictureCacheBudget`, `RenderWarning.ImageTooLarge` (WI-005) | RenderContextTests, PictureCacheTests |
-| `CliApp.Run(args, stdout, stderr)` | CliTests |
+| `RenderLimits` (each limit, `Default`, `Check(document, outputs, context)`), `RenderOutputs` (WI-006) | CountedLimitTests, ElementLimitTests, MeterTests, CrashGuardTests, PdfLimitTests, OrdinaryDocumentTests |
+| `RenderLimitException` (`Limit` and its constants, `Value`, `Page`, `Element`, message) (WI-006) | CountedLimitTests, ElementLimitTests, MeterTests, CrashGuardTests, PdfLimitTests, RenderLimitCliTests |
+| `RenderContext(baseDirectory, limits, timeProvider, fonts)` / `Limits` (WI-006) | MeterTests, CountedLimitTests |
+| `Exporter.MaxPixels` (500 megapixels since WI-006) | CrashGuardTests, LimitsTests |
+| `DocumentJson.MaxLoadBytes` / `Load(path, maxBytes)` (WI-006) | DocumentJsonTests, RenderLimitCliTests |
+| `CliApp.Run(args, stdout, stderr)` | CliTests, RenderLimitCliTests (WI-006) |
 
 Coverage floor: ≥ 85 % line coverage per touched file (coverlet `XPlat Code Coverage`, cobertura).
 

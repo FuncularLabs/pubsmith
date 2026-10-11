@@ -80,11 +80,13 @@ each of which a named test must fail (see Results).
   boxes is placed once, in the first box that shows it (text flow between boxes is not reproduced yet). A damaged shape or group costs that record, damaged text or pictures cost that
   layer (all reported), not the file; anything unexpected is wrapped in `PubFormatException` naming the file.
   Out-of-memory is deliberately not caught; these limits are meant to keep a small file far from it. The JSON
-  document and report are written as streams, never held as one string. Rendering is not budgeted yet (WI-006).
+  document and report are written as streams, never held as one string. Rendering is bounded since WI-006 (below).
   Since WI-005 a repeated picture is read once, decoded once while it fits the cache budget, and embedded at most
   once per distinct crop, and a shadow costs about what its element costs in PNG, and in PDF for opaque shapes; any other shadow in a PDF is still an image the size of its element
   (about 6 ms for a page-sized one). So hostile shapes (very long WordArt, very many pages, heavy overdraw, many
-  large translucent shadows in a PDF) can still take minutes to render.
+  large translucent shadows in a PDF) can still take minutes to render. Since WI-006 such a document is stopped once
+  its drawing passes `MaxDrawTime` (600 s by default), or refused at once by a counted limit; a PDF page's end,
+  faults in the caller's stream and total memory are WI-007's (README, Limits on rendering).
 - CLI: `pubsmith import <file.pub> [--out <dir>]` writes the document JSON, its pictures and the report;
   `pubsmith render <file.pub> --pdf/--png` converts directly.
 
