@@ -11,7 +11,8 @@ internal enum PictureState { Missing, Unreadable, TooLarge, FileTooLarge, Ok }
 /// later changes to the file are not seen by this context; only a file that could not be read (an I/O error, such as
 /// another program's lock) is read again at its next lookup. Its header is read before anything is decoded: a picture declaring more than
 /// <see cref="MaxPixels"/> is never decoded or embedded. An accepted picture keeps its encoded image (drawn into PDFs, so each is embedded at most once per
-/// distinct crop and a JPEG passes through) and, for bitmaps, a decoded copy made on first use; decoded copies are kept within
+/// distinct crop; SkPDF writes a JPEG's own bytes when it can, and decodes and writes again one it cannot, such as an
+/// EXIF-turned or CMYK JPEG) and, for bitmaps, a decoded copy made on first use; decoded copies are kept within
 /// <see cref="Budget"/> pixels, least recently used dropped before the next decode, and a picture larger than the
 /// budget is drawn from its encoded image each time, as before. Not thread-safe (one context, one thread).
 /// </summary>

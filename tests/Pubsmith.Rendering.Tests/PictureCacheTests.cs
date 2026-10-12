@@ -16,6 +16,9 @@ public sealed class PictureCacheTests : IDisposable
     {
         Save(Noise(300, 200, 1), "picture.png", SKEncodedImageFormat.Png);
         Save(Noise(300, 200, 2), "photo.jpg", SKEncodedImageFormat.Jpeg);
+        var photo = File.ReadAllBytes(Path.Combine(_dir, "photo.jpg"));
+        for (ushort o = 1; o <= 8; o++) File.WriteAllBytes(Path.Combine(_dir, $"photo-orientation{o}.jpg"), PictureLookTests.WithExifOrientation(photo, o));
+        File.WriteAllBytes(Path.Combine(_dir, "cmyk.jpg"), CmykJpeg);
         Save(Solid(100, 100, SKColors.Red), "a.png", SKEncodedImageFormat.Png);
         Save(Solid(100, 100, SKColors.Lime), "b.png", SKEncodedImageFormat.Png);
         Save(Solid(100, 100, SKColors.Blue), "c.png", SKEncodedImageFormat.Png);
@@ -25,6 +28,15 @@ public sealed class PictureCacheTests : IDisposable
     }
 
     public void Dispose() => Directory.Delete(_dir, recursive: true);
+
+    // A 16 x 16 CMYK JPEG (Adobe APP14 marker); SkiaSharp has no CMYK colour type to write one. Made with Pillow 12.2:
+    // Image.new("CMYK", (16, 16), (0, 255, 255, 0)).save(f, "JPEG", quality=90).
+    private static readonly byte[] CmykJpeg = Convert.FromBase64String(
+        "/9j/7gAOQWRvYmUAZAAAAAAA/9sAQwADAgIDAgIDAwMDBAMDBAUIBQUEBAUKBwcGCAwKDAwLCgsLDQ4SEA0OEQ4LCxAWEBETFBUVFQwPFxgWFBgSFBUU" +
+        "/8AAFAgAEAAQBEMRAE0RAFkRAEsRAP/EAB8AAAEFAQEBAQEBAAAAAAAAAAABAgMEBQYHCAkKC//EALUQAAIBAwMCBAMFBQQEAAABfQECAwAEEQUSITFB" +
+        "BhNRYQcicRQygZGhCCNCscEVUtHwJDNicoIJChYXGBkaJSYnKCkqNDU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6g4SFhoeIiYqS" +
+        "k5SVlpeYmZqio6Slpqeoqaqys7S1tre4ubrCw8TFxsfIycrS09TV1tfY2drh4uPk5ebn6Onq8fLz9PX29/j5+v/aAA4EQwBNAFkASwAAPwD9U6/Kqvyq" +
+        "r9U6KKKKKKKKKKKK/9k=");
 
     private static SKBitmap Noise(int w, int h, int seed)
     {
@@ -92,6 +104,33 @@ public sealed class PictureCacheTests : IDisposable
             doc.Close();
         }
         Assert.Equal("DCTDecode", Assert.Single(PdfImages.In(own.ToArray())).Filter);
+    }
+
+    public static TheoryData<string, string> Jpegs() => new()
+    {
+        { "photo.jpg", "DCTDecode" },                 // no EXIF
+        { "photo-orientation1.jpg", "DCTDecode" },
+        { "photo-orientation2.jpg", "FlateDecode" },
+        { "photo-orientation3.jpg", "FlateDecode" },
+        { "photo-orientation4.jpg", "FlateDecode" },
+        { "photo-orientation5.jpg", "FlateDecode" },
+        { "photo-orientation6.jpg", "FlateDecode" },
+        { "photo-orientation7.jpg", "FlateDecode" },
+        { "photo-orientation8.jpg", "FlateDecode" },
+        { "cmyk.jpg", "FlateDecode" },
+    };
+
+    [Theory]
+    [MemberData(nameof(Jpegs))]
+    public void AJpegInThePdf_IsReencodedWhenTurnedOrCmyk_AndEmbeddedOnce(string source, string filter)
+    {
+        // SkPDF writes a JPEG's own bytes (DCTDecode) when it can; one whose EXIF orientation is not 1, or a CMYK one,
+        // it decodes and writes again (FlateDecode). Either way 20 placements over two pages embed it once, and the
+        // cache decodes nothing for a PDF.
+        var ctx = new RenderContext(_dir);
+        var pages = Enumerable.Range(0, 2).Select(_ => PageOf([.. Enumerable.Range(0, 10).Select(i => (Element)Picture(source, i))])).ToArray();
+        Assert.Equal(filter, Assert.Single(PdfImages.In(Pdf(ctx, pages))).Filter);
+        Assert.Equal(0, ctx.Pictures.Decodes);
     }
 
     [Fact]

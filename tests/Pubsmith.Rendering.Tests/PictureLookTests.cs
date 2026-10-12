@@ -37,7 +37,7 @@ public sealed class PictureLookTests : IDisposable
     }
 
     /// <summary>The JPEG with an APP1 Exif segment (one IFD entry: Orientation) inserted after its SOI marker.</summary>
-    private static byte[] WithExifOrientation(byte[] jpeg, ushort orientation)
+    internal static byte[] WithExifOrientation(byte[] jpeg, ushort orientation)
     {
         byte[] exif =
         [

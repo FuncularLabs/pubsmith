@@ -219,7 +219,8 @@ public static class PageRenderer
             return;
         }
         // Read once per context (only a read failure is tried again); drawn from its decoded copy on a bitmap, from its
-        // encoded image anywhere else (so a PDF embeds it at most once per distinct crop and passes a JPEG through).
+        // encoded image anywhere else (so a PDF embeds it at most once per distinct crop; SkPDF writes a JPEG's own bytes
+        // when it can, and decodes and writes again one it cannot, such as an EXIF-turned or CMYK JPEG).
         var picture = ctx.Pictures.Get(path, ctx.Limits.MaxPictureFileBytes);
         switch (picture.State)
         {

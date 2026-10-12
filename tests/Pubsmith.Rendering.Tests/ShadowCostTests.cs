@@ -146,7 +146,7 @@ public sealed class ShadowCostTests : IDisposable
         // A rotated layer is written as the bounding box of the turned rectangle (the 2 pt slack turns with it).
         var a = e.Rotation * Math.PI / 180;
         var (c, s) = (Math.Abs(Math.Cos(a)), Math.Abs(Math.Sin(a)));
-        return (w * c + h * s + 2, w * s + h * c + 2);
+        return (w * c + h * s, w * s + h * c);
     }
 
     private (double Width, double Height) Unrotated(Element e)

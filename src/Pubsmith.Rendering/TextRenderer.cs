@@ -123,7 +123,12 @@ internal static class TextRenderer
             var outline = t.Outline is { Width: > 0 } o
                 ? new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = (float)o.Width, Color = PageRenderer.Color(o.Color), StrokeJoin = SKStrokeJoin.Round }
                 : null;
-            return new StretchedText(WordArt.Place(glyphs, target, t.Warp, ctx), outline, ctx);
+            try { return new StretchedText(WordArt.Place(glyphs, target, t.Warp, ctx), outline, ctx); }
+            catch
+            {
+                outline?.Dispose();   // no StretchedText owns it
+                throw;
+            }
         }
         finally
         {
